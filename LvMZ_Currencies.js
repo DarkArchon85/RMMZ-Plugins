@@ -98,14 +98,12 @@ $gameCurrency = null;
  * independent of the main currencies, you'll setup its price as normal
  * but use a different notetag:
  *
- * <tag type id>
+ * <AltCurrency [type] [id]>
  *
- * tag: The main notetag to determine using an alternative currency
- *    example: <AltBuy  or  <AltSell
  * type: Item category to buy or sell. (Item - Weapon - Armor)
- *    example: <AltBuy Item
+ *    example: <AltCurrency Item
  * id: This is the item, weapon or armor ID in the database.
- *    example: <AltBuy Item 5>
+ *    example: <AltCurrency Item 5>
  *
  * ----------------------------------------------------------------------------
  * Terms of Use
@@ -216,19 +214,20 @@ LordV_Currencies.prototype.index = function(itemId) {
 };
 
 LordV_Currencies.prototype.meta = function(item) {
-	if (!item) return {type:'', id:0};
-	const tag = /<(?:ALTBUY||ALTSELL)[ ](?:ITEM||WEAPON||ARMOR)[ ](\d+)>/i;
+	if (!item) return {mode:'', type:'', id:0};
+	const tag = /<(?:ALTCURRENCY)[ ](?:ITEM||WEAPON||ARMOR)[ ](\d+)>/i;
 	const match = item.note.match(tag);
 	if (match) return {
 		type: match[0].split(' ')[1].toLowerCase(),
 		id: Number(RegExp.$1)
 	};
 	if (item.meta.Currency) return {
+		mode: '',
 		type: 'currency',
 		id: Number(item.meta.Currency)
 	};	
-	if (!this.exists()) return {type:'', id:0};
-	return {type:'currency', id:lvCur_defaultUnit};
+	if (!this.exists()) return {mode:'', type:'', id:0};
+	return {mode:'', type:'currency', id:lvCur_defaultUnit};
 };
 
 LordV_Currencies.prototype.exists = function() {
