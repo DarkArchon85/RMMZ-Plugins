@@ -9,9 +9,10 @@ Imported["LvMZAnimatedFaces"] = true;
 //=============================================================================
 /*:
  * @target MZ
- * @plugindesc [v1.1] Animates face sets to appear as if speaking. Or when 
+ * @plugindesc [v1.2] Animates face sets to appear as if speaking. Or when 
  * idle, it will run that animation too (blinking).
  * @author LordValinar
+ * @url https://github.com/DarkArchon85/RMMZ-Plugins
  *
  * @help
  * ============================================================================
@@ -69,6 +70,7 @@ Imported["LvMZAnimatedFaces"] = true;
  * Changelog
  * ============================================================================
  *
+ *  v1.2 - Fixed error with "this.pause" and added in battle scene animations.
  *  v1.1 - Added in a 'stop' to animations when "waiting" in the message.
  *  v1.0 - Plugin Converted from MV
  *
@@ -228,6 +230,14 @@ Game_Message.prototype.animatedFace = function() {
 const sceneMap_update = Scene_Map.prototype.update;
 Scene_Map.prototype.update = function() {
 	sceneMap_update.call(this);
+	if ($gameMessage.hasText() && $gameMessage.animatedFace()) {
+		this._messageWindow.updateFaceAnimation();
+	}
+};
+
+const sceneBattle_update = Scene_Battle.prototype.update;
+Scene_Battle.prototype.update = function() {
+	sceneBattle_update.call(this);
 	if ($gameMessage.hasText() && $gameMessage.animatedFace()) {
 		this._messageWindow.updateFaceAnimation();
 	}
