@@ -262,11 +262,11 @@ Window_Message.prototype.initialize = function(rect) {
 
 // New - Where the magic happens! (Credit: Fogomax for the original function I altered from)
 Window_Message.prototype.updateFaceAnimation = function() {
-	if (this.pause || this._waitCount > 0) {
+	if (this.pause || this._waitCount > 0 || this._textState == null) {
 		this._afTick = 0;
+		this._animFaceSide = 'left';
 		this._animFaceWait = 0;
 		this._animFaceIndex = 0;
-		this._animFaceSide = 'left';
 		this.drawMessageFace();
 	} else if (this._animFaceWait > 0) {
 		this._animFaceWait--;
@@ -314,15 +314,9 @@ const windowMsg_drawMsgFace = Window_Message.prototype.drawMessageFace;
 Window_Message.prototype.drawMessageFace = function() {
 	if ($gameMessage.animatedFace()) {
 		const faceName = $gameMessage.faceName();
-		const faceIndex = this._animFaceIndex;
-		const rtl = $gameMessage.isRTL();
-		const width = ImageManager.faceWidth;
-		const height = this.innerHeight;
-		const x = rtl ? this.innerWidth - width - 4 : 4;
-		this.drawFace(faceName, faceIndex, x, 0, width, height);
-	} else {
-		windowMsg_drawMsgFace.call(this);
+		$gameMessage.setFaceImage(faceName, this._animFaceIndex);
 	}
+	windowMsg_drawMsgFace.call(this);
 };
 
 // Alias - Animated faces get drawn specifically
@@ -339,13 +333,11 @@ Window_Base.prototype.drawFace = function(faceName, faceIndex, x, y, width, heig
 		const sh = Math.min(height, ph);
 		const dx = Math.floor(x + Math.max(width - pw, 0) / 2);
 		const dy = Math.floor(y + Math.max(height - ph, 0) / 2);
-		let sx = (faceIndex % 4) * pw + (pw - sw) / 2;
-		let sy = Math.floor(faceIndex / 4) * ph + (ph - sh) / 2;
-		if (anim && this._afSpeakY >= 0 && this._textState) {
-			sx = faceIndex * pw;
+		const sx = faceIndex * pw;
+		let sy;
+		if (this._afSpeakY >= 0 && this._textState) {
 			sy = ph * this._afSpeakY;
-		} else if (anim && this._afIdleY >= 0 && !this._textState) {
-			sx = faceIndex * pw;
+		} else if (this._afIdleY >= 0 && !this._textState) {
 			sy = ph * this._afIdleY;
 		}
 		this.contents.clearRect(dx, dy, pw, ph);
