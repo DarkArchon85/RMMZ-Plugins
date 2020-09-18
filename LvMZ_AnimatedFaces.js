@@ -252,7 +252,7 @@ Window_Message.prototype.initialize = function(rect) {
 
 // New - Where the magic happens! (Credit: Fogomax for the original function I altered from)
 Window_Message.prototype.updateFaceAnimation = function() {
-	if (this.pause() || this._waitCount > 0) {
+	if (this.pause || this._waitCount > 0) {
 		this._afTick = 0;
 		this._animFaceWait = 0;
 		this._animFaceIndex = 0;
