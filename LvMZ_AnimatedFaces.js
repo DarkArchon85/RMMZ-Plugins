@@ -71,7 +71,10 @@ Imported["LvMZAnimatedFaces"] = true;
  * ============================================================================
  *
  *  v1.2 - Fixed error with "this.pause" and added in battle scene animations.
+ *         Also fixed an error when using wait codes, the image disappeared.
+ *
  *  v1.1 - Added in a 'stop' to animations when "waiting" in the message.
+ *
  *  v1.0 - Plugin Converted from MV
  *
  * ============================================================================
@@ -262,21 +265,24 @@ Window_Message.prototype.initialize = function(rect) {
 
 // New - Where the magic happens! (Credit: Fogomax for the original function I altered from)
 Window_Message.prototype.updateFaceAnimation = function() {
-	if (this.pause || this._waitCount > 0 || this._textState == null) {
-		this._afTick = 0;
-		this._animFaceSide = 'left';
-		this._animFaceWait = 0;
-		this._animFaceIndex = 0;
-		this.drawMessageFace();
-	} else if (this._animFaceWait > 0) {
+	const waiting = (this.pause || this._waitCount > 0);
+	if (this._animFaceWait > 0) {
 		this._animFaceWait--;
 	} else {
 		this._afTick++;
+		if (waiting) {
+			let curFace = this._animFaceIndex;
+			this._animFaceIndex = 0;
+			this.drawMessageFace();
+			this._animFaceIndex = curFace;
+			this._afTick = 0;
+		}
 		if (this._afTick >= 6) {
 			this._afTick = 0;
 			if (this._animFaceSide == 'left') {
 				this._animFaceIndex++;
-				if ((this._animFaceIndex >= this._afMaxFrames && !this._textState) || (this._animFaceIndex >= this._afSpeakFrames && this._textState)) {
+				if ((this._animFaceIndex >= this._afMaxFrames && !this._textState) || 
+				    (this._animFaceIndex >= this._afSpeakFrames && this._textState)) {
 					this._animFaceSide = 'right';
 				}
 			} else {
