@@ -10,7 +10,7 @@ $gameCurrency = null;
 
 /*:
  * @target MZ
- * @plugindesc [v1.1] Allows usage of multiple currencies as seen in both
+ * @plugindesc [v1.2] Allows usage of multiple currencies as seen in both
  * real life and in other RPGs! Dollars, Shillings, Gold, you name it!
  * @author LordValinar
  * @orderAfter LvMZ_Economy
