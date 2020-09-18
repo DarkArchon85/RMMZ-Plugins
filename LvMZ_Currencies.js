@@ -13,6 +13,7 @@ $gameCurrency = null;
  * @plugindesc [v1.2] Allows usage of multiple currencies as seen in both
  * real life and in other RPGs! Dollars, Shillings, Gold, you name it!
  * @author LordValinar
+ * @url https://github.com/DarkArchon85/RMMZ-Plugins
  * @orderAfter LvMZ_Economy
  *
  * @param Currencies
