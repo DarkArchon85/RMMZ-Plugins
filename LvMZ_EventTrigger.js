@@ -8,21 +8,21 @@ Imported["LvMZEventTrigger"] = true;
 
 /*:
  * @target MZ
- * @plugindesc [v1.0] Plugin to have events detect if they run into other events.
+ * @plugindesc [v1.1] Plugin to have events detect if they run into other events.
  * @author LordValinar
  * @url https://github.com/DarkArchon85/RMMZ-Plugins
- *
- * @ --------------------------------------------------------------------------
  *
  * @help
  * ----------------------------------------------------------------------------
  * Instructions
  * ----------------------------------------------------------------------------
  *
- * Have an event with a parallel page to detect if:
- *   this.eventTouch()
+ * Have an event that you want to be the "activator" have a comment tag:
+ * <Activate: Touch>
+ *  exactly like that.. spaces and all!
  *
- * If it returns "true" then it will do what you want it to.
+ * Any event of normal priority that it touches with a trigger other than 
+ * AUTORUN or PARALLEL, will automatically run its page!
  *
  * ----------------------------------------------------------------------------
  * Terms of Use
@@ -37,6 +37,7 @@ Imported["LvMZEventTrigger"] = true;
  * Changelog
  * ----------------------------------------------------------------------------
  *
+ * v1.1 - Upgraded to auto-start events by touching other events!
  * v1.0 - Plugin finished!
  *
  * ----------------------------------------------------------------------------
@@ -45,12 +46,51 @@ Imported["LvMZEventTrigger"] = true;
 (() => {
 'use strict';
 
-Game_Interpreter.prototype.eventTouch = function() {
-	const ev = $gameMap.event(this._eventId);
-	const x2 = $gameMap.roundXWithDirection(ev.x, ev._direction);
-    const y2 = $gameMap.roundYWithDirection(ev.y, ev._direction);
-	console.log("eventTouch:", ev.isCollidedWithEvents(x2, y2));
-	return ev.isCollidedWithEvents(x2, y2);
+Game_Event.prototype.moveStraight = function(d) {
+	Game_Character.prototype.moveStraight.call(this, d);
+	if (this.isEventTouched() && this.touchActive()) {
+		const x = $gameMap.roundXWithDirection(this.x, d);
+		const y = $gameMap.roundYWithDirection(this.y, d);
+		this.startMapEvent(x, y, [0,1,2], true);
+	}
+};
+
+Game_Event.prototype.isEventTouched = function() {
+	const d = this._direction;
+	const x = $gameMap.roundXWithDirection(this.x, d);
+    const y = $gameMap.roundYWithDirection(this.y, d);
+	return this.isCollidedWithEvents(x, y);
+};
+
+Game_Event.prototype.touchActive = function() {
+	if (!this.page()) return;
+	const tag = /<ACTIVATE:[ ]TOUCH>/i;
+	for (const ev of this.list()) {
+		if ([108,408].contains(ev.code)) {
+			let note = ev.parameters[0];
+			if (note.match(tag)) return true;
+		}
+	}
+	return false;
+};
+
+Game_Event.prototype.startMapEvent = function(x, y, triggers, normal) {
+	for (const event of $gameMap.eventsXy(x, y)) {
+		if (
+			event.isTriggerIn(triggers) &&
+			event.isNormalPriority() === normal
+		) {
+			event.start();
+		}
+	}
+};
+
+// -- For Debugging --
+Game_Player.prototype.getFront = function() {
+	const d = this._direction;
+	const x = $gameMap.roundXWithDirection(this.x, d);
+	const y = $gameMap.roundYWithDirection(this.y, d);
+	return $gameMap.eventsXyNt(x, y);
 };
 
 })();
