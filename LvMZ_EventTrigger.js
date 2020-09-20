@@ -8,7 +8,7 @@ Imported["LvMZEventTrigger"] = true;
 
 /*:
  * @target MZ
- * @plugindesc [v1.1] Plugin to have events detect if they run into other events.
+ * @plugindesc [v1.0] Plugin to have events detect if they run into other events.
  * @author LordValinar
  * @url https://github.com/DarkArchon85/RMMZ-Plugins
  *
@@ -37,7 +37,6 @@ Imported["LvMZEventTrigger"] = true;
  * Changelog
  * ----------------------------------------------------------------------------
  *
- * v1.1 - Upgraded to auto-start events by touching other events!
  * v1.0 - Plugin finished!
  *
  * ----------------------------------------------------------------------------
