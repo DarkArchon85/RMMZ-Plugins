@@ -9,7 +9,7 @@ Imported["LvMZAnimatedFaces"] = true;
 //=============================================================================
 /*:
  * @target MZ
- * @plugindesc [v1.2] Animates face sets to appear as if speaking. Or when 
+ * @plugindesc [v1.3] Animates face sets to appear as if speaking. Or when 
  * idle, it will run that animation too (blinking).
  * @author LordValinar
  * @url https://github.com/DarkArchon85/RMMZ-Plugins
@@ -69,6 +69,9 @@ Imported["LvMZAnimatedFaces"] = true;
  * ============================================================================
  * Changelog
  * ============================================================================
+ *
+ *  v1.3 - Fixed previous version the idle animation stopped working, and 
+ *         also fixed the animation delay wasn't working!
  *
  *  v1.2 - Fixed error with "this.pause" and added in battle scene animations.
  *         Also fixed an error when using wait codes, the image disappeared.
@@ -265,18 +268,16 @@ Window_Message.prototype.initialize = function(rect) {
 
 // New - Where the magic happens! (Credit: Fogomax for the original function I altered from)
 Window_Message.prototype.updateFaceAnimation = function() {
-	const waiting = (this.pause || this._waitCount > 0);
-	if (this._animFaceWait > 0) {
+	if (this._waitCount > 0) {
+		this._animFaceSide = 'left';
+		this._animFaceIndex = 0;
+		this._animFaceWait = 0;
+		this._afTick = 0;
+		this.drawMessageFace();
+	} else if (this._animFaceWait > 0) {
 		this._animFaceWait--;
 	} else {
 		this._afTick++;
-		if (waiting) {
-			let curFace = this._animFaceIndex;
-			this._animFaceIndex = 0;
-			this.drawMessageFace();
-			this._animFaceIndex = curFace;
-			this._afTick = 0;
-		}
 		if (this._afTick >= 6) {
 			this._afTick = 0;
 			if (this._animFaceSide == 'left') {
@@ -290,7 +291,9 @@ Window_Message.prototype.updateFaceAnimation = function() {
 				if (this._animFaceIndex <= 0) {
 					this._animFaceSide = 'left';
 					if (this._afDelay[1] > 0 && (this._textState == null || this._afSpeakY < 0)) {
-						this._animFaceWait =  ~~(Math.random() * (this._afDelay[1] - this._afDelay[0] + 1) + this._afDelay[0]);
+						let min = Math.ceil(this._afDelay[0]);
+						let max = Math.floor(this._afDelay[1]);
+						this._animFaceWait = ~~(Math.random() * (max - min + 1) + min);
 					}
 				}
 			}
