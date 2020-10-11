@@ -1708,7 +1708,6 @@ LordV_Shop.prototype.itemCount = function(index) {
 	let n = this._count[index];
 	if (Array.isArray(n)) {
 		n = ~~(Math.random() * (n[1] - n[0] + 1) + n[0]);
-		this._count[index] = n;
 	}
 	return n;
 };
