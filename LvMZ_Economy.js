@@ -57,7 +57,7 @@ if (!Imported['LvMZCore']) {
 
 /*:
  * @target MZ
- * @plugindesc [v1.0] Gives life to the world and its merchants by varying up
+ * @plugindesc [v1.1] Gives life to the world and its merchants by varying up
  * their prices based on several factors (including relations and supply).
  * @author LordValinar
  * @url https://github.com/DarkArchon85/RMMZ-Plugins
@@ -229,6 +229,8 @@ if (!Imported['LvMZCore']) {
  * ----------------------------------------------------------------------------
  * Changelog
  * ----------------------------------------------------------------------------
+ *
+ * v1.1 - Fixed random item count (wasn't randomizing for EACH item)
  *
  * v1.0 - Plugin finished!
  *
