@@ -1026,7 +1026,7 @@ Game_Event.prototype.setupPageSettings = function() {
 	this.initShopSettings();
 };
 
-Game_Event.prototype.initShopSettings() {
+Game_Event.prototype.initShopSettings = function() {
 	if (!this.page() || !this.isShop()) return;
 	const shop = this.shopData();
 	const tagSET = /<COUNT:[ ]SET\s(ITEM||WEAPON||ARMOR)[ ](\d+)>/i;
