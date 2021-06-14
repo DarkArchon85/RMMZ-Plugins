@@ -7,7 +7,7 @@ var Imported = Imported || {};
 Imported["LvMZEconomy"] = true;
 
 // Only acquire the essentials:
-if (!Imported['LvMZCore']) {
+if (!Imported['LvMZ_Core']) {
 	/**
 	* Formats a percentile number to remove all trails
 	*
@@ -28,7 +28,11 @@ if (!Imported['LvMZCore']) {
 	 * @returns {number} Index of the array by key and value
 	 */
 	Array.prototype.indexByKey = function(key, value) {
-		return this.map(e => e[key]).indexOf(value);
+		let count = 0;
+		return this.filter(entry => {
+			if (!entry) count++;
+			return entry !== null;
+		}).map(obj => obj[key]).indexOf(value) + count;
 	};
 	
 	/**
@@ -57,7 +61,7 @@ if (!Imported['LvMZCore']) {
 
 /*:
  * @target MZ
- * @plugindesc [v1.3] Gives life to the world and its merchants by varying up
+ * @plugindesc [v1.4] Gives life to the world and its merchants by varying up
  * their prices based on several factors (including relations and supply).
  * @author LordValinar
  * @url https://github.com/DarkArchon85/RMMZ-Plugins
@@ -132,6 +136,8 @@ if (!Imported['LvMZCore']) {
  *  - To set an item for a demand, use the following notetag:
  * <Demand: name>         
  *  : name being the demand category (case-insensitive)
+ *  - Multiple demand tags can be used for the same item to be 
+ *    changed based on different regions (as of v1.4 update)
  *
  *
  * >> GOLD ICON ID <<
@@ -229,6 +235,12 @@ if (!Imported['LvMZCore']) {
  * ----------------------------------------------------------------------------
  * Changelog
  * ----------------------------------------------------------------------------
+ *
+ * v1.4 - Fixed demands to be case-insensitive (as originally instructed),
+ *      - Item notetags now allow for multiple <Demand: name> tags to 
+ *        be searched per region.
+ *      - Added fixed price adjustments for demands (can stack with the 
+ *        rate percentage and vice versa).
  *
  * v1.3 - Now stores party inventory multiple times (instead of overriding) if
  *        caught stealing. Retrieving gear takes the first set each time the 
@@ -371,7 +383,7 @@ if (!Imported['LvMZCore']) {
  * @arg name
  * @text Region Name
  * @desc The name to assign this region.
- * NOTE: Case-Sensitive and must exist in paramters!
+ * NOTE: Case-Sensitive!
  * @default 
  *
  * @arg rate
@@ -405,33 +417,24 @@ if (!Imported['LvMZCore']) {
  *
  * @ --------------------------------------------------------------------------
  *
- * @command chngTaxRate
- * @text Change Tax Rate
- * @desc Do you want to raise or lower taxes for this 
- * region?
+ * @command setTaxRate
+ * @text Set Tax Rate
+ * @desc Determines the tax rate for this region.
  *
  * @arg name
  * @text Region Name
  * @desc Name of the region to change taxes for.
  * NOTE: Case-Sensitive and must exist in paramters!
- * @default 
- *
- * @arg type
- * @text Change Type
- * @type select
- * @option Raise
- * @option Lower
- * @desc Are you raising or lowering the taxes?
- * @default Raise
+ * @default
  *
  * @arg value
  * @text Change Amount
  * @type number
  * @decimals 0
- * @min 1
+ * @min 0
  * @max 100
- * @desc The amount to change the current tax rate by.
- * @default 1
+ * @desc The amount to set the current tax rate (percentage)
+ * @default 0
  *
  * @ --------------------------------------------------------------------------
  *
@@ -608,7 +611,17 @@ if (!Imported['LvMZCore']) {
  * @min -100
  * @max 100
  * @desc The price adjustment (percentage) when this demand 
- * is higher or lower than 0.
+ * is higher or lower than 0. Can stack with adj(fixed).
+ * @default 0
+ *
+ * @param adj
+ * @text Price Adjustment
+ * @type number
+ * @decimals 0
+ * @min -999999
+ * @max 999999
+ * @desc The price adjustmen (fixed rate) when this demand 
+ * is higher or lower than 0. Can stack with rate (%).
  * @default 0
  */
 
@@ -655,17 +668,9 @@ PluginManager.registerCommand(pluginName, 'removeRegion', args => {
 	$gameSystem.removeRegion(args.name);
 });
 
-PluginManager.registerCommand(pluginName, 'chngTaxRate', args => {
-	const type = String(args.type).toLowerCase();
+PluginManager.registerCommand(pluginName, 'setTaxRate', args => {
 	const amount = Number(args.value);
-	switch (type) {
-		case 'raise': 
-			$gameSystem.increaseTaxRate(args.name, amount); 
-			break;
-		case 'lower': 
-			$gameSystem.decreaseTaxRate(args.name, amount); 
-			break;
-	}
+	$gameSystem.setTaxRate(args.name, amount);
 });
 
 PluginManager.registerCommand(pluginName, 'stealItem', args => {
@@ -723,7 +728,7 @@ Game_System.prototype.initialize = function() {
 };
 
 Game_System.prototype.initRegions = function() {
-	this._region = '';
+	this._region = "";
 	this._regionData = [];
 	const regionList = JSON.parse(SnD.regions).map(e => JSON.parse(e));
 	regionList.forEach(r => {
@@ -738,7 +743,11 @@ Game_System.prototype.initRegions = function() {
 
 Game_System.prototype.initDemands = function(categories) {
 	return categories.reduce((r,c) => {
-		r.push({ name:c.name, rate:Number(c.rate) });
+		r.push({
+			name: c.name.toLowerCase(),
+			rate: Number(c.rate),
+			adj: Number(c.adj)
+		});
 		return r;
 	},[]);
 };
@@ -746,7 +755,7 @@ Game_System.prototype.initDemands = function(categories) {
 Game_System.prototype.addRegion = function(region, rate, categories) {
 	this._regionData.push({
 		name: region,
-		taxRate: Number(rate).clamp(0,100),
+		taxRate: Number(rate),
 		demands: this.initDemands(categories)
 	});
 };
@@ -773,32 +782,32 @@ Game_System.prototype.taxRate = function(region) {
 	return 0;
 };
 
-Game_System.prototype.increaseTaxRate = function(region, amount) {
+Game_System.prototype.setTaxRate = function(region, amount) {
 	if (this.validRegion(region)) {
 		const index = this._regionData.indexByKey("name", region);
-		const cv = this._regionData[index].taxRate;
-		this._regionData[index].taxRate = (cv + amount).clamp(0,100);
+		this._regionData[index].taxRate = amount.clamp(0,100);
 	}
 };
 
-Game_System.prototype.decreaseTaxRate = function(region, amount) {
-	this.increaseTaxRate(region, -amount);
-};
-
-Game_System.prototype.demandRate = function(index) {
+Game_System.prototype.demand = function(index) {
 	const item = MapManager.event().shopData()._goods[index];
-	if (!item || !this.validRegion(this._region)) return 0;
-	const tag = /<DEMAND:\s([^>]*)>/i;
-	if (item.note.match(tag)) {
-		let name = RegExp.$1;
-		let index = this._regionData.indexByKey("name", this._region);
-		const list = this._regionData[index].demands;
-		if (list.map(e => e.name).includes(name)) {
-			index = list.indexByKey('name', name);
-			return (list[index].rate / 100).percent();
+	if (!item || !this.validRegion(this._region)) return [0,0];
+	const tag = /<DEMAND:[ ]([A-Z]{2,})>/i;
+	const data = item.note.split(/[\r\n]+/);
+	for (const meta of data) {
+		if (meta.match(tag)) {
+			let name = String(RegExp.$1).toLowerCase();
+			let index = this._regionData.indexByKey("name", this._region);
+			const list = this._regionData[index].demands;
+			if (list.map(e => e.name).includes(name)) {
+				index = list.indexByKey('name', name);
+				const rate = (list[index].rate / 100).percent();
+				const adj = list[index].adj;
+				return [rate, adj];
+			}
 		}
 	}
-	return 0;
+	return [0,0];
 };
 
 Game_System.prototype.validRegion = function(region) {
@@ -970,31 +979,55 @@ Game_Party.prototype.gearStored = function() {
 const gameMap_init = Game_Map.prototype.initialize;
 Game_Map.prototype.initialize = function() {
 	gameMap_init.call(this);
-	this._shopData = [];
+	this._shopData = {};
 	this._stolenItems = [];
 };
 
 Game_Map.prototype.recoverStolenItems = function() {
 	for (const key of this._stolenItems) {
 		$gameSelfSwitches.setValue(key, false);
-		this._stolenItems.remove(key);
 	}
+	this._stolenItems = [];
 };
 
 Game_Map.prototype.shops = function(mapId) {
-	mapId = mapId.clamp(1, 999);
+	if (mapId < 1 || mapId > 999) return null;
 	if (!this._shopData[mapId]) {
-		this._shopData[mapId] = [];
+		this._shopData[mapId] = {};
 	}
 	return this._shopData[mapId];
 };
 
 
 // --- GAME EVENT ---
+const gameEv_initMembers = Game_Event.prototype.initMembers;
+Game_Event.prototype.initMembers = function() {
+	gameEv_initMembers.call(this);
+	this._isShop = false;
+	this._shopId = 0;
+};
+
+const gameEv_clear = Game_Event.prototype.clearPageSettings;
+Game_Event.prototype.clearPageSettings = function() {
+	gameEv_clear.call(this);
+	this._isShop = false;
+	this._shopId = 0;
+};
+
 const gameEv_setup = Game_Event.prototype.setupPageSettings;
 Game_Event.prototype.setupPageSettings = function() {
-	if (!this.page() || !this.isShop()) return gameEv_setup.call(this);
 	gameEv_setup.call(this);
+	for (const ev of this.list()) {
+		if (ev.code == 302) {
+			this._isShop = true;
+			break;
+		}
+	}
+	this.initShopSettings();
+};
+
+Game_Event.prototype.initShopSettings() {
+	if (!this.page() || !this.isShop()) return;
 	const shop = this.shopData();
 	const tagSET = /<COUNT:[ ]SET\s(ITEM||WEAPON||ARMOR)[ ](\d+)>/i;
 	const tagRAND = /<COUNT:[ ]RANDOM\s(ITEM||WEAPON||ARMOR)[ ](\d+)-(\d+)>/i;
@@ -1027,7 +1060,7 @@ Game_Event.prototype.setupPageSettings = function() {
 				shop._buysStolen = true;
 			} else if (note.match(tagFUNDS) && shop._money === 0) {
 				let startGold = Number(RegExp.$1);
-				let startVariance = Number(RegExp.$2) || 0;
+				let startVariance = Number(RegExp.$2);
 				shop.initShopVault(startGold, startVariance);
 			}
 		}
@@ -1039,8 +1072,7 @@ Game_Event.prototype.setupPageSettings = function() {
 };
 
 Game_Event.prototype.switchShops = function(id) {
-	if (!this._shopId) this._shopId = 1;
-	if (this._shopId === id || !this.isShop()) return;
+	if (!this.isShop() || this._shopId === id) return;
 	// First, store current data 
 	const shop = this.shopData();
 	const data = {
@@ -1074,10 +1106,7 @@ Game_Event.prototype.shopData = function() {
 };
 
 Game_Event.prototype.isShop = function() {
-	for (const ev of this.list()) {
-		if (ev.code == 302) return true;
-	}
-	return false;
+	return this._isShop;
 };
 
 Game_Event.prototype.createNewShop = function() {
@@ -1121,6 +1150,8 @@ Game_Interpreter.prototype.checkPurchased = function() {
 
 // Can be used with Control Variables, to return an amount 
 // of stolen goods from that area (good for theft detectors)
+// :Control Variables[variableId]
+//  > set = script: this.logStolenItem()
 Game_Interpreter.prototype.logStolenItem = function() {
 	const key = [this._mapId, this._eventId, stolenSelfSw];
 	const data = $gameMap._stolenItems;
@@ -1503,15 +1534,12 @@ Window_ShopBuy.prototype.drawShopBuyPrice = function(index, rect) {
 };
 
 Window_ShopBuy.prototype.drawItemCount = function(index, rect) {
+	const nCount = this.itemCount(index);
+	if (nCount === 255) return; // unlimited
 	const item = this.itemAt(index);
 	const iw = ImageManager.iconWidth;
 	const sw = item.stolen ? iw + 6 : 0;
 	const nameWidth = iw + this.textWidth(item.name) + 8 + sw;
-	const nCount = this.itemCount(index);
-	if (nCount === 255) return; // unlimited
-	// - Removed (might use in future)
-	//const mcl = Math.max(2, String(nCount).length);
-	//const countName = "("+nCount.padZero(mcl)+")";
 	const countName = "("+nCount.padZero(2)+")";
 	const countWidth = Math.max(0, rect.width - nameWidth);
 	const countX = rect.x + nameWidth;
@@ -1544,11 +1572,9 @@ Window_ShopBuy.prototype.setItemCountColor = function(count) {
 const wss_isEnabled = Window_ShopSell.prototype.isEnabled;
 Window_ShopSell.prototype.isEnabled = function(item) {
 	const ret = wss_isEnabled.call(this, item);
-	if (ret) {
-		if (!this.shop()._buysStolen && item.stolen) return false;
-		const price = economicSellPrice(item.price, this.index());
-		if (this.shop()._money < Math.floor(price)) return false;
-	}
+	const price = economicSellPrice(item.price, this.index());
+	if (!this.shop()._buysStolen && item.stolen) return false;
+	if (this.shop()._money < Math.floor(price)) return false;
 	return ret;
 };
 
@@ -1704,7 +1730,7 @@ LordV_Shop.prototype.setupStock = function(shopGoods) {
 	this.clear();
 	shopGoods = shopGoods.sortByColumn(0,1);
 	for (const goods of shopGoods) {
-		let item = this.goodsToItem(goods);
+		const item = this.goodsToItem(goods);
 		const price = item ? goods[2] === 0 ? item.price : goods[3] : 0;
 		const checkNum = goods[4] ? typeof goods[4] === 'number' : false;
 		const count = checkNum ? goods[4] : this.itemCount(goods[0]);
@@ -1885,17 +1911,18 @@ function economicBuyPrice(price, index) {
 	let adj = 0;						// Total price adjustment
 	// Supply & Demand
 	adj += supplyCheck(index);
-	adj += $gameSystem.demandRate(index);
-	// Factions, Races, Relations, and Titles
+	adj += $gameSystem.demand(index)[0]; // Rate(%)
+	adj += $gameSystem.demand(index)[1]; // Fixed Adjustment
+	// Factions, Races, Genders, Relations, and Titles
 	//  * Positive numbers become discounts here!
 	if (Imported['LvMZFactions']) {
 		const ev = MapManager.event();
 		const pc = $gameParty.leader();
 		adj += ev.lvGet('priceAdjust',[pc,'faction']) * -1;
 		adj += ev.lvGet('priceAdjust',[pc,'race']) * -1;
+		adj += ev.lvGet('priceAdjust',[pc,'gender']) * -1;
 		adj += ev.lvGet('priceAdjust',[pc,'relation']) * -1;
 		adj += ev.lvGet('priceAdjust',[pc,'title']) * -1;
-		adj += ev.lvGet('priceAdjust',[pc,'gender']) * -1;
 	}
 	// Taxes
 	adj += $gameSystem.taxRate();
@@ -1910,7 +1937,8 @@ function economicSellPrice(price, index) {
 	let adj = 0;						// Total Price Adjustment
 	// Supply & Demand
 	adj += supplyCheck(index);
-	adj += $gameSystem.demandRate(index);
+	adj += $gameSystem.demand(index)[0]; // Rate(%)
+	adj += $gameSystem.demand(index)[1]; // Fixed Adjustment
 	// Factions, Races, Relations, and Titles
 	if (Imported['LvMZFactions']) {
 		const ev = MapManager.event();
