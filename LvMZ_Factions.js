@@ -243,8 +243,8 @@ if (!Imported['LvMZCore']) {
  * addTitle             [name{string}]
  *   - Name:   The name of the title (Case-Sensitive and must exist!)
  *
- * removeTitle          [index{number}]
- *   - Index:  Index of the title to remove
+ * removeTitle          [name{string}]
+ *   - Name:   The name of the title (Case-Sensitive and must exist!)
  *
  * setHiddenFaction     [hidden{boolean}]
  *   - Hidden: If hidden, members of this faction aren't affected by prices.
@@ -1606,8 +1606,9 @@ LordV_Factions.prototype.lastTitle = function(object) {
 	return object._titles[this._titleIndex] || 'None';
 };
 
-LordV_Factions.prototype.removeTitle = function(object, index) {
+LordV_Factions.prototype.removeTitle = function(object, name) {
 	if (this._titleIndex > 0) this._titleIndex--;
+	const index = object._titles.indexOf(name);
 	object._titles.splice(index, 1);
 	$gameMap.requestRefresh();
 };
