@@ -28,7 +28,11 @@ if (!Imported['LvMZCore']) {
 	 * @returns {number} Index of the array by key and value
 	 */
 	Array.prototype.indexByKey = function(key, value) {
-		return this.map(e => e[key]).indexOf(value);
+		let count = 0;
+		return this.filter(entry => {
+			if (!entry) count++;
+			return entry !== null;
+		}).map(ob => obj[key]).indexOf(value) + count;
 	};
 	
 	/**
@@ -45,7 +49,7 @@ if (!Imported['LvMZCore']) {
 
 /*:
  * @target MZ
- * @plugindesc [v1.1] Core Plugin - Required for other plugins interacting
+ * @plugindesc [v1.2] Core Plugin - Required for other plugins interacting
  * with factions, relationship, genders or titles (ex: LvMZ_Economy.js)
  * @author LordValinar
  * @url https://github.com/DarkArchon85/RMMZ-Plugins
@@ -293,6 +297,7 @@ if (!Imported['LvMZCore']) {
  * Changelog
  * ----------------------------------------------------------------------------
  *
+ * v1.2 - Fixed the event conditions to include original checks (updated demo)
  * v1.1 - Added gender-related list, script calls, and plugin commands
  * v1.0 - Finished plugin
  *
@@ -1100,81 +1105,91 @@ Game_Event.prototype.meetsConditions = function(page) {
 	// First - setup the NPC if haven't already:
 	this.initNPC(page);
 	const c = page.conditions;
-	const pc = $gameParty.leader();
 	const sw = $dataSystem.switches;
 	const v = $dataSystem.variables;
-	const tagSw = /\[(FACTION||RACE||RELATION||TITLE||GENDER)\](.*)/i;
-	const tagVar = /\[RELATION\]/i;
-	let name, source, target;
+	let name = "";
+	let callBack = true;
 	if (c.switch1Valid) {
 		name = sw[c.switch1Id];
-		if (name.match(tagSw)) {
-			// now return if the player matches
-			let type = String(RegExp.$1).toLowerCase();
-			name = String(RegExp.$2);
-			switch (type) {
-				case 'faction': 
-					source = this.lvGet('curFaction') === name;
-					target = pc.lvGet('curFaction') === name;
-					break;
-				case 'race':
-					source = this.lvGet('race') === name;
-					target = pc.lvGet('race') === name;
-					break;
-				case 'relation':
-					source = this.lvGet('relationName',[this.pc]) === name;
-					target = true;
-					break;
-				case 'title':
-					source = true;
-					target = pc.lvGet('checkTitle',[name]);
-					break;
-				case 'gender':
-					source = true;
-					target = pc.lvGet('gender') === name;
-					break;
-			}
-			return source && target;
+		if (this.matchSwitchName(name)) {
+			callBack = false;
 		}
 	}
 	if (c.switch2Valid) {
 		name = sw[c.switch2Id];
-		if (name.match(tagSw)) {
-			// now return if the player matches
-			let type = String(RegExp.$1).toLowerCase();
-			name = String(RegExp.$2);
-			switch (type) {
-				case 'faction': 
-					source = this.lvGet('curFaction') === name;
-					target = pc.lvGet('curFaction') === name;
-					break;
-				case 'race':
-					source = this.lvGet('race') === name;
-					target = pc.lvGet('race') === name;
-					break;
-				case 'relation':
-					source = this.lvGet('relationName',[this.pc]) === name;
-					target = true;
-					break;
-				case 'title':
-					source = true;
-					target = pc.lvGet('checkTitle',[name]);
-					break;
-				case 'gender':
-					source = true;
-					target = pc.lvGet('gender') === name;
-					break;
-			}
-			return source && target;
+		if (this.matchSwitchName(name)) {
+			callBack = false;
 		}
 	}
 	if (c.variableValid) {
 		name = v[c.variableId];
-		if (name.match(tagVar)) {
-			return this.lvGet('relationValue',[this,pc]) >= c.variableValue;
+		if (name.match(/\[RELATION\]/i)) {
+			if (this.lvGet('relationValue',[this,pc]) >= c.variableValue) {
+				callBack = false;
+			}
 		}
 	}
-	return gameEvent_meetsConditions.call(this, page);
+	
+	if (callBack) {
+		return gameEvent_meetsConditions.call(this, page);
+	}
+	
+	// If any custom check above changes the callBack flag, we add in 
+	// the original (non switch/var) checks
+	if (c.selfSwitchValid) {
+        const key = [this._mapId, this._eventId, c.selfSwitchCh];
+        if ($gameSelfSwitches.value(key) !== true) {
+            return false;
+        }
+    }
+    if (c.itemValid) {
+        const item = $dataItems[c.itemId];
+        if (!$gameParty.hasItem(item)) {
+            return false;
+        }
+    }
+    if (c.actorValid) {
+        const actor = $gameActors.actor(c.actorId);
+        if (!$gameParty.members().includes(actor)) {
+            return false;
+        }
+    }
+	return true;
+};
+
+Game_Event.prototype.matchSwitchName = function(value) {
+	const pc = $gameParty.leader();
+	const tagSw = /\[(FACTION||RACE||RELATION||TITLE||GENDER)\](.*)/i;
+	let source = false;
+	let target = false;
+	if (value.match(tagSw)) {
+		// now return if the player matches
+		const type = String(RegExp.$1).toLowerCase();
+		const name = String(RegExp.$2);
+		switch (type) {
+			case 'faction': 
+				source = this.lvGet('curFaction') === name;
+				target = pc.lvGet('curFaction') === name;
+				break;
+			case 'race':
+				source = this.lvGet('race') === name;
+				target = pc.lvGet('race') === name;
+				break;
+			case 'relation':
+				source = this.lvGet('relationName',[this.pc]) === name;
+				target = true;
+				break;
+			case 'title':
+				source = true;
+				target = pc.lvGet('checkTitle',[name]);
+				break;
+			case 'gender':
+				source = true;
+				target = pc.lvGet('gender') === name;
+				break;
+		}
+	}
+	return source && target;
 };
 
 Game_Event.prototype.initNPC = function(page) {
