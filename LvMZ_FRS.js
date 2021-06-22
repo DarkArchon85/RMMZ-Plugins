@@ -58,7 +58,7 @@ if (!Imported['LvMZ_Core']) {
 
 /*:
  * @target MZ
- * @plugindesc [v1.0] Develop friendship and romance between actors or events. Gain new buffs
+ * @plugindesc [v1.1] Develop friendship and romance between actors or events. Gain new buffs
  * or skills too when friendship/romance is high enough, and more!
  * @author LordValinar
  * @url https://github.com/DarkArchon85/RMMZ-Plugins
@@ -219,18 +219,15 @@ if (!Imported['LvMZ_Core']) {
  *
  * @arg actorId
  * @text Actor ID
- * @type number
- * @min -1
- * @max 1000
  * @desc ID of the target actor to befriend. Using 0 will get the 
  * party leader's actorID, -1 target befriends the entire party.
- * @default -1
+ * @default 0
  *
  * @arg value
  * @text Relation Value
  * @type number
- * @min -9999
- * @max 9999
+ * @min -99999
+ * @max 99999
  * @desc This is the amount (positive or negative) to change 
  * the current relation between leader and actor.
  * @default 0
@@ -287,9 +284,6 @@ if (!Imported['LvMZ_Core']) {
  *
  * @arg actorId
  * @text Actor ID
- * @type number
- * @min 0
- * @max 1000
  * @desc Of which actor's flags are we searching? Using 0 will get 
  * the party leader's actorID.
  * @default 0
@@ -318,9 +312,6 @@ if (!Imported['LvMZ_Core']) {
  *
  * @arg actorId
  * @text Actor ID
- * @type number
- * @min 0
- * @max 1000
  * @desc The actor ID from the database. Choose 0 for party leader.
  * actors or events.
  * @default 1
@@ -335,9 +326,6 @@ if (!Imported['LvMZ_Core']) {
  *
  * @arg targetId
  * @text Actor or Event ID
- * @type number
- * @min 1
- * @max 1000
  * @desc The actor or event ID of <target>
  * @default 1
  *
@@ -458,6 +446,13 @@ if (!Imported['LvMZ_Core']) {
  *  -> Setting it to 1 or more, will thus befriend/romance the target
  *     actor. If the actor does not exist, it will still default to the 
  *     party leader and this command will do nothing.
+ * ::NEW!!:
+ *  -> You can now substitute the number with one of the following tags:
+ * v[#]: Retrieve an actorId with a variable!
+ * a[#]: Retrieve the actorId from whichever actor is in this position
+ *    example: a[1] = party leader's actorId, a[3] = 3rd actor's ID.
+ *    NOTE: If there is no actor in that position, it will error out!
+ *     So you will have to create the condition yourself.
  *
  * :value = Number (between -9999 to 9999)
  *  -> This value is what the friendship/romance will be lowered or 
@@ -488,6 +483,14 @@ if (!Imported['LvMZ_Core']) {
  *
  * :type = Event | Switch | Variable
  * :actorId = Number (between 0 to 1000) 0 = party leader
+ * ::NEW!!:
+ *  -> You can now substitute the number with one of the following tags:
+ * v[#]: Retrieve an actorId with a variable!
+ * a[#]: Retrieve the actorId from whichever actor is in this position
+ *    example: a[1] = party leader's actorId, a[3] = 3rd actor's ID.
+ *    NOTE: If there is no actor in that position, it will error out!
+ *     So you will have to create the condition yourself.
+ *
  * :typeId = Database ID of the common event, switch or variable
  *
  *
@@ -501,7 +504,16 @@ if (!Imported['LvMZ_Core']) {
  * :targetId = actor(0-1000) or event ID(1-999) to get
  * :variableId = Variable ID to store relation data to
  *
+ * ::NEW!!:
+ *  -> You can now substitute the actorId and targetId with one of the 
+ *     following tags:
+ * v[#]: Retrieve an actorId with a variable!
+ * a[#]: Retrieve the actorId from whichever actor is in this position
+ *    example: a[1] = party leader's actorId, a[3] = 3rd actor's ID.
+ *    NOTE: If there is no actor in that position, it will error out!
+ *     So you will have to create the condition yourself.
  * 
+ * ============================================================================
  * >> SCRIPT CALLS:
  *     Use any of the following in an event's script call to set or get
  *     data (the latter being in a Conditional Branch script). 
@@ -548,6 +560,29 @@ if (!Imported['LvMZ_Core']) {
  *     is greater than or equal to the engagedMin (default: 90). If 
  *     the engagedMin is set to 0, it will use the minLevel insetad.
  *
+ * this.frsFP(actorId=0)
+ *  -> Returns value of friendship between event and actor(actorId)
+ *  -> If actorId = 0, it will compare with party leader.
+ *
+ * this.frsRP(actorId=0)
+ *  -> Returns value of romance between event and actor(actorId)
+ *  -> If actorId = 0, it will compare with party leader.
+ *
+ * this.removeNPC(mapId, eventId, actorId=0)
+ *  -> Deletes the NPC event data from the actor's relation list.
+ *  -> If actorId = 0, it will compare with party leader.
+ * 
+ * this.removeAllFriends(toLeader = false)
+ *  -> Removes all friends from the party leader's relation list.
+ *  -> If toLeader = true, all friends of the party leader will 
+ *     also remove the party leader from their relation list.
+ *
+ * this.removeAllRomance(toLeader = false)
+ *  -> Removes all romanced actors and events from the party leader's
+ *     relation list.
+ *  -> If toLeader = true, all romanced actors and events of the 
+ *     party leader will also remove them from their relation list.
+ *
  * actor.friendLevel(actorId)
  *  -> Returns the friendship value between the target actor (actorId)
  *     and self. Must first define "actor".
@@ -568,6 +603,9 @@ if (!Imported['LvMZ_Core']) {
  * ----------------------------------------------------------------------------
  * Changelog
  * ----------------------------------------------------------------------------
+ *
+ * v1.1 - Fixes and added an eval method for retrieving actorIDs with a 
+ *        variable (v[#]) or other (a[#]), explained in Plugins section.
  *
  * v1.0 - Plugin finished!
  *
@@ -608,13 +646,41 @@ const rc2A		 = (lvParams['rc2Alpha']/100).percent();
 const colorRC2   = hexToRgba(lvParams['rc2'], rc2A);
 
 /******************************************************************************
+	private functions
+******************************************************************************/
+
+function evalActorID(formula, absMin=0) {
+	// Replace variable strings
+	let regex = /v\[(\d+)\]/gi;
+	if (formula.match(regex)) {
+		let newValue = "$gameVariables.value("+RegExp.$1+")";
+		formula = formula.replace(regex, newValue);
+	}
+	// Replace actor strings 
+	// * (a[1] = party leader, a[3] = 3rd party member)
+	// * Only returns the ActorID, not the actor
+	regex = /a\[(\d+)\]/gi;
+	if (formula.match(regex)) {
+		let v = String(Number(RegExp.$1) - 1);
+		let newValue = "$gameParty._actors["+v+"]";
+		formula = formula.replace(regex, newValue);
+	}
+	try {
+		const value = Number(eval(formula)).clamp(absMin, 1000);
+		return isNaN(value) ? 0 : value;
+	} catch(e) {
+		return 0;
+	}
+}
+
+/******************************************************************************
 	plugin commands
 ******************************************************************************/
 
 PluginManager.registerCommand(pluginName, 'changeRelations', args => {
 	const target = String(args.target).toLowerCase();
 	const type = String(args.type).toLowerCase();
-	const actorId = Number(args.actorId);
+	const actorId = evalActorID(args.actorId, -1);
 	const value = Number(args.value);
 	const toLeader = eval(args.reverse);
 	const intr = $gameMap._interpreter;
@@ -637,7 +703,7 @@ PluginManager.registerCommand(pluginName, 'changeRelations', args => {
 					case 'romance': intr.addEventRomance(value, conditions, id); break;
 				}
 			}
-		} else { // befriends actor/leader only
+		} else { // befriends actor-leader only
 			switch (type) {
 				case 'friend': intr.addEventFriendship(value, conditions, actorId); break;
 				case 'romance': intr.addEventRomance(value, conditions, actorId); break;
@@ -648,7 +714,8 @@ PluginManager.registerCommand(pluginName, 'changeRelations', args => {
 
 PluginManager.registerCommand(pluginName, 'disableFlag', args => {
 	const type = String(args.type).toLowerCase();
-	const actor = $gameActors.actor(args.actorId) || $gameParty.leader();
+	const actorId = evalActorID(args.actorId);
+	const actor = actorId > 0 ? $gameActors.actor(actorId) : $gameParty.leader();
 	const id = String(args.typeId);
 	let uID = "";
 	switch (type) {
@@ -656,14 +723,14 @@ PluginManager.registerCommand(pluginName, 'disableFlag', args => {
 		case 'switch':   uID = "switch"+id;   break;
 		case 'variable': uID = "variable"+id; break;
 	}
-	if (actor && uID.length > 0) delete actor._frsDoOnce[uID];
+	if (actor && uID) delete actor._frsDoOnce[uID];
 });
 
 PluginManager.registerCommand(pluginName, 'saveToVar', args => {
 	const type       = String(args.type).toLowerCase();
-	const actorId    = Number(args.actorId);
+	const actorId    = evalActorID(args.actorId);
 	const tType      = String(args.target).toLowerCase();
-	const targetId   = Number(args.targetId);
+	const targetId   = evalActorID(args.targetId);
 	const variableId = Number(args.variableId);
 	const actor      = $gameActors.actor(actorId) || $gameParty.leader();
 	const intr       = $gameMap._interpreter;
@@ -1232,7 +1299,7 @@ Game_Interpreter.prototype.addEventFriendship = function(value, conditions = nul
 	const min = data.rp > 0 ? minLevel + 1 : minLevel;
 	data.fp = (data.fp + value).clamp(min, maxLevel);
 	if (Array.isArray(conditions)) {
-		const actor = $gameActors.actor(actorId) ??= $gameParty.leader();
+		const actor = $gameActors.actor(actorId) || $gameParty.leader();
 		const type = conditions[0];
 		const value = conditions[1];
 		const id = conditions[2];
@@ -1257,7 +1324,7 @@ Game_Interpreter.prototype.addEventRomance = function(value, conditions = null, 
 	const data = this.frsNpcData(this._mapId, this._eventId, actorId);
 	data.rp = (data.rp + value).clamp(minLevel, maxLevel);
 	if (Array.isArray(conditions)) {
-		const actor = $gameActors.actor(actorId) ??= $gameParty.leader();
+		const actor = $gameActors.actor(actorId) || $gameParty.leader();
 		const type = conditions[0];
 		const value = conditions[1];
 		const id = conditions[2];
@@ -1299,7 +1366,7 @@ Game_Interpreter.prototype.frsRP = function(actorId = 0) {
 };
 
 Game_Interpreter.prototype.frsNpcData = function(mapId, eventId, actorId = 0) {
-	const actor = $gameActors.actor(actorId) ??= $gameParty.leader();
+	const actor = $gameActors.actor(actorId) || $gameParty.leader();
 	if (!actor._npcList[mapId]) actor._npcList[mapId] = [];
 	if (!actor._npcList[mapId][eventId]) {
 		actor._npcList[mapId][eventId] = { 
@@ -1311,8 +1378,8 @@ Game_Interpreter.prototype.frsNpcData = function(mapId, eventId, actorId = 0) {
 };
 
 Game_Interpreter.prototype.removeNPC = function(mapId, eventId, actorId = 0) {
-	const actor = $gameActors.actor(actorId) ??= $gameParty.leader();
-	const data = actor._npcList[mapId] ??= [];
+	const actor = $gameActors.actor(actorId) || $gameParty.leader();
+	const data = actor._npcList[mapId] || [];
 	delete data[eventId];
 	for (let i = data.length - 1; i > 0; i--) {
 		if (data[i] === null) {
