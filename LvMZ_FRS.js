@@ -615,13 +615,6 @@ if (!Imported['LvMZ_Core']) {
 (() => {
 'use strict';
 
-function hexToRgba(hex, alpha) {
-	let r = parseInt(hex.slice(1, 3), 16),
-		g = parseInt(hex.slice(3, 5), 16),
-		b = parseInt(hex.slice(5, 7), 16);
-	return "rgba("+r+", "+g+", "+b+", "+alpha+")";
-}
-
 const pluginName = 'LvMZ_FRS';
 const lvParams   = PluginManager.parameters(pluginName);
 const minLevel   = Number(lvParams['minLevel']);
@@ -648,6 +641,13 @@ const colorRC2   = hexToRgba(lvParams['rc2'], rc2A);
 /******************************************************************************
 	private functions
 ******************************************************************************/
+
+function hexToRgba(hex, alpha) {
+	let r = parseInt(hex.slice(1, 3), 16),
+		g = parseInt(hex.slice(3, 5), 16),
+		b = parseInt(hex.slice(5, 7), 16);
+	return "rgba("+r+", "+g+", "+b+", "+alpha+")";
+}
 
 function evalActorID(formula, absMin=0) {
 	// Replace variable strings
@@ -678,12 +678,12 @@ function evalActorID(formula, absMin=0) {
 ******************************************************************************/
 
 PluginManager.registerCommand(pluginName, 'changeRelations', args => {
-	const target = String(args.target).toLowerCase();
-	const type = String(args.type).toLowerCase();
-	const actorId = evalActorID(args.actorId, -1);
-	const value = Number(args.value);
+	const target   = String(args.target).toLowerCase();
+	const type     = String(args.type).toLowerCase();
+	const actorId  = evalActorID(args.actorId, -1);
+	const value    = Number(args.value);
 	const toLeader = eval(args.reverse);
-	const intr = $gameMap._interpreter;
+	const intr     = $gameMap._interpreter;
 	if (target === 'actor') {
 		switch (type) {
 			case 'friend': intr.addFriendship(actorId, value, toLeader); break;
@@ -697,7 +697,7 @@ PluginManager.registerCommand(pluginName, 'changeRelations', args => {
 		if (actorId < 0) { // befriends entire party
 			const members = $gameParty.battleMembers();
 			for (const actor of members) {
-				let id = actor._actorId;
+				const id = actor._actorId;
 				switch (type) {
 					case 'friend': intr.addEventFriendship(value, conditions, id); break;
 					case 'romance': intr.addEventRomance(value, conditions, id); break;
@@ -713,11 +713,11 @@ PluginManager.registerCommand(pluginName, 'changeRelations', args => {
 });
 
 PluginManager.registerCommand(pluginName, 'disableFlag', args => {
-	const type = String(args.type).toLowerCase();
+	const type    = String(args.type).toLowerCase();
 	const actorId = evalActorID(args.actorId);
-	const actor = actorId > 0 ? $gameActors.actor(actorId) : $gameParty.leader();
-	const id = String(args.typeId);
-	let uID = "";
+	const actor   = actorId > 0 ? $gameActors.actor(actorId) : $gameParty.leader();
+	const id      = String(args.typeId);
+	let uID       = "";
 	switch (type) {
 		case 'event':    uID = "commEv"+id;   break;
 		case 'switch':   uID = "switch"+id;   break;
@@ -732,7 +732,7 @@ PluginManager.registerCommand(pluginName, 'saveToVar', args => {
 	const tType      = String(args.target).toLowerCase();
 	const targetId   = evalActorID(args.targetId);
 	const variableId = Number(args.variableId);
-	const actor      = $gameActors.actor(actorId) || $gameParty.leader();
+	const actor      = actorId > 0 ? $gameActors.actor(actorId) || $gameParty.leader();
 	const intr       = $gameMap._interpreter;
 	if (type == 'friend') {
 		let value = tType == 'actor' ? actor.friendLevel(targetId) : intr.frsFP(actorId);
@@ -1165,7 +1165,7 @@ Game_Actor.prototype.loadMapEvent = function(mapId, eventId) {
 };
 
 Game_Actor.prototype.addFRSstate = function(stateId) {
-    if (this.isStateAddable(stateId)) {
+    if (this.isStateAffected(stateId)) {
         if (!this._frsStates.contains(stateId)) {
             this._frsStates.push(stateId);
         }
