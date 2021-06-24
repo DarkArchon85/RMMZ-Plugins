@@ -58,7 +58,7 @@ if (!Imported['LvMZ_Core']) {
 
 /*:
  * @target MZ
- * @plugindesc [v1.1] Develop friendship and romance between actors or events. Gain new buffs
+ * @plugindesc [v1.2] Develop friendship and romance between actors or events. Gain new buffs
  * or skills too when friendship/romance is high enough, and more!
  * @author LordValinar
  * @url https://github.com/DarkArchon85/RMMZ-Plugins
@@ -604,6 +604,8 @@ if (!Imported['LvMZ_Core']) {
  * Changelog
  * ----------------------------------------------------------------------------
  *
+ * v1.2 - Hotfix #2 (small syntax error)
+ *
  * v1.1 - Fixes and added an eval method for retrieving actorIDs with a 
  *        variable (v[#]) or other (a[#]), explained in Plugins section.
  *
@@ -732,7 +734,7 @@ PluginManager.registerCommand(pluginName, 'saveToVar', args => {
 	const tType      = String(args.target).toLowerCase();
 	const targetId   = evalActorID(args.targetId);
 	const variableId = Number(args.variableId);
-	const actor      = actorId > 0 ? $gameActors.actor(actorId) || $gameParty.leader();
+	const actor      = actorId > 0 ? $gameActors.actor(actorId) : $gameParty.leader();
 	const intr       = $gameMap._interpreter;
 	if (type == 'friend') {
 		let value = tType == 'actor' ? actor.friendLevel(targetId) : intr.frsFP(actorId);
@@ -1030,7 +1032,7 @@ Game_Actor.prototype.addRomance = function(actorId, value) {
 	// Lover's Buff - add or remove as necessary
 	const inParty = $gameParty._actors.contains(actorId);
 	if (inParty && loverBuff > 0) {
-		const lMin = loverMin || minLevel;
+		const lMin = Math.max(loverMin, minLevel);
 		if (newValue >= lMin) {
 			this.addState(loverBuff);
 			this.addFRSstate(loverBuff);
@@ -1213,7 +1215,7 @@ Game_Party.prototype.addActor = function(actorId) {
 			}
 		}
 		// Lover's Buff - only if leader + new member are already lovers
-		const lMin = loverMin || minLevel;
+		const lMin = Math.max(loverMin, minLevel);
 		const isLover = this.leader().romanceLevel(actorId) >= lMin;
 		if (isLover && loverBuff > 0) {
 			this.leader().addState(loverBuff);
@@ -1351,7 +1353,7 @@ Game_Interpreter.prototype.isEventRomanced = function(actorId = 0) {
 };
 
 Game_Interpreter.prototype.isEventLover = function(actorId = 0) {
-	const lMin = loverMin || minLevel;
+	const lMin = Math.max(loverMin, minLevel);
 	return this.frsRP(actorId) >= lMin;
 };
 
@@ -1479,13 +1481,13 @@ Scene_Battle.prototype.terminate = function() {
 	const list = $gameParty._actors;
 	for (const actor of members) {
 		// cycles through each actor in the party
-		let actorId = actor._actorId;
-		let dataActor = $dataActors[actorId];
-		let value = dataActor.frsMeta 
+		const actorId = actor._actorId;
+		const dataActor = $dataActors[actorId];
+		const value = dataActor.frsMeta 
 			? dataActor.frsMeta['battle'] || 0 
 			: 0;
 		if (value !== 0) { // positive or negative number
-			for (const id of list) { // -all- members
+			for (const id of list) { // All Members
 				if (actorId === id) continue;
 				actor.addFriendship(id, value);
 			}
@@ -1664,7 +1666,7 @@ Window_Relations.prototype.drawItem = function(index) {
 	const spriteY = rect.y + (sprite.height - 7);
 	const nameX = rect.x + sprite.width;
 	const nameW = rect.width / 3;
-	const lMin = loverMin || minLevel;
+	const lMin = Math.max(loverMin, minLevel);
 	let curLevel = this.relation('friend', item); 
 	let romLevel = this.relation('romance', item);
 	let rate = curLevel > minLevel && maxLevel > 0 ? curLevel / maxLevel : 0;	
