@@ -1025,7 +1025,7 @@ Game_Actor.prototype.addFriendship = function(actorId, value) {
 Game_Actor.prototype.addRomance = function(actorId, value) {
 	if (this._actorId == actorId) return;
 	// If not in the friends list, just set it to 0
-	this._friendsList[actorId] ??= 0;
+	this._friendsList[actorId] = this._friendsList[actorId] || 0;
 	const curValue = this.romanceLevel(actorId);
 	const newValue = (curValue + value).clamp(minLevel, maxLevel);
 	this._romanceList[actorId] = newValue;
