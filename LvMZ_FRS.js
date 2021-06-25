@@ -945,7 +945,8 @@ Game_Action.prototype.applyItemUserEffect = function(target) {
 Game_Action.prototype.applyFRSeffects = function(target) {
 	const actor = this.subject();
 	const actorId = actor._actorId;
-	const meta = this._item.object().frsMeta;
+	const meta = this._item.object().frsMeta || null;
+	if (!meta) return;
 	const iType = this._item._dataClass;
 	let type, value, mode, id;
 	switch (iType) {
