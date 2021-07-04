@@ -373,10 +373,10 @@ if (!Imported['LvMZ_Core']) {
  * and whoever the item is used on within the party menu (target). They can't
  * be used on the party leader however.
  *
- * <frsItem type actorId: value>
+ * <frsItem type value: mode>
  * TYPE   : friend | romance
- * ACTORID: Id of target actor to improve relations with leader
- * VALUE  : true | false | self
+ * VALUE  : value to add(+) or remove(-) from target (actor item is used on)
+ * MODE   : true | false | self
  * -> true: Saves relation between leader <-> target
  * -> false: Saves relation between leader -> target only
  * -> self: Saves relation between target -> leader only
@@ -943,10 +943,10 @@ Game_Action.prototype.applyItemUserEffect = function(target) {
 };
 
 Game_Action.prototype.applyFRSeffects = function(target) {
-	const actor = this.subject();
-	const actorId = actor._actorId;
+	const user = this.subject(); // usually the party leader
+	const actorId = user._actorId; 
 	const meta = this._item.object().frsMeta || null;
-	if (!meta || !actor.isActor()) return;
+	if (!meta || !user.isActor()) return;
 	const iType = this._item._dataClass;
 	let type, value, mode, id;
 	switch (iType) {
@@ -958,11 +958,11 @@ Game_Action.prototype.applyFRSeffects = function(target) {
 			if (type === 'friend') {
 				switch (mode) {
 					case 'true': {
-						actor.addFriendship(id, value);
+						user.addFriendship(id, value);
 						target.addFriendship(actorId, value);
 					} break;
 					case 'false': {
-						actor.addFriendship(id, value);
+						user.addFriendship(id, value);
 					} break;
 					case 'self': {
 						target.addFriendship(actorId, value);
@@ -971,11 +971,11 @@ Game_Action.prototype.applyFRSeffects = function(target) {
 			} else if (type === 'romance') {
 				switch (mode) {
 					case 'true': {
-						actor.addRomance(id, value);
+						user.addRomance(id, value);
 						target.addRomance(actorId, value);
 					} break;
 					case 'false': {
-						actor.addRomance(id, value);
+						user.addRomance(id, value);
 					} break;
 					case 'self': {
 						target.addRomance(actorId, value);
@@ -991,9 +991,9 @@ Game_Action.prototype.applyFRSeffects = function(target) {
 				id = target._actorId;
 			}
 			if (type === 'friend') {
-				actor.addFriendship(id, value);
+				user.addFriendship(id, value);
 			} else if (type === 'romance') {
-				actor.addRomance(id, value);
+				user.addRomance(id, value);
 			}
 		} break;
 	}
@@ -1381,7 +1381,7 @@ Game_Interpreter.prototype.frsNpcData = function(mapId, eventId, actorId = 0) {
 };
 
 Game_Interpreter.prototype.removeNPC = function(mapId, eventId, actorId = 0) {
-	const actor = $gameActors.actor(actorId) || $gameParty.leader();
+	const actor = actorId > 0 ? $gameActors.actor(actorId) : $gameParty.leader();
 	const data = actor._npcList[mapId] || [];
 	delete data[eventId];
 	for (let i = data.length - 1; i > 0; i--) {
@@ -1793,7 +1793,6 @@ Window_CurrentActor.prototype.drawActorName = function(actor, x, y, width) {
 };
 
 })();
-
 
 // --- OWN CLASSES ---
 function LordV_Event() {
