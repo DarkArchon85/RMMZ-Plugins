@@ -61,7 +61,7 @@ if (!Imported['LvMZ_Core']) {
 
 /*:
  * @target MZ
- * @plugindesc [v1.4] Gives life to the world and its merchants by varying up
+ * @plugindesc [v1.5] Gives life to the world and its merchants by varying up
  * their prices based on several factors (including relations and supply).
  * @author LordValinar
  * @url https://github.com/DarkArchon85/RMMZ-Plugins
@@ -235,6 +235,9 @@ if (!Imported['LvMZ_Core']) {
  * ----------------------------------------------------------------------------
  * Changelog
  * ----------------------------------------------------------------------------
+ *
+ * v1.5 - Fixed "logStolenItem()": Method to check arrays didn't work so 
+ *        I implimented a function that WILL work.
  *
  * v1.4 - Fixed demands to be case-insensitive (as originally instructed),
  *      - Item notetags now allow for multiple <Demand: name> tags to 
@@ -1155,8 +1158,21 @@ Game_Interpreter.prototype.checkPurchased = function() {
 Game_Interpreter.prototype.logStolenItem = function() {
 	const key = [this._mapId, this._eventId, stolenSelfSw];
 	const data = $gameMap._stolenItems;
-	if (!data.includes(key)) data.push(key);
+	if (!data.hasStolenItem(key)) data.push(key);
 	return data.filter(key => key[0] === this._mapId).length;
+};
+
+Array.prototype.hasStolenItem = function(search) {
+	for (let i = 0; i < this.length; i++) {
+		const entry = this[i];
+		let match = 0;
+
+		for (let j = 0; j < entry.length; j++) {
+			if (search[j] !== entry[j]) break;
+			if (++match > 2) return i;
+		}
+	}
+	return -1;
 };
 
 /******************************************************************************
