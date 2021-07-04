@@ -1169,10 +1169,10 @@ Array.prototype.hasStolenItem = function(search) {
 
 		for (let j = 0; j < entry.length; j++) {
 			if (search[j] !== entry[j]) break;
-			if (++match > 2) return i;
+			if (++match > 2) return true;
 		}
 	}
-	return -1;
+	return false;
 };
 
 /******************************************************************************
