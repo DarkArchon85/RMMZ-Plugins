@@ -36,6 +36,12 @@ Imported["LvMZEventTrigger"] = true;
  * with a trigger other than AUTORUN or PARALLEL, will automatically 
  * run the Triggered's page!
  *
+ * >> Continue Move Route Params
+ * Although the parameters are straight forward, keep in mind that 
+ * the variable values ADDs to the current value (so setting this 
+ * to a negative number will still subtract the original value).
+ *   ex: variable(1) value(5) +(ADD) newValue(-10) = -5
+ *
  * ----------------------------------------------------------------------------
  * Terms of Use
  * ----------------------------------------------------------------------------
