@@ -19,7 +19,8 @@ Imported["LvMZEventTrigger"] = true;
  *
  * Have an event that you want to be the "activator" have a comment tag:
  * <Activate: Touch>
- *  exactly like that.. spaces and all!
+ *  ( not case-sensitive and space not required )
+ *  ( NOTE: can have as event notetag instead if preferred )
  *
  * Any event of normal priority that it touches with a trigger other than 
  * AUTORUN or PARALLEL, will automatically run its page!
@@ -62,8 +63,10 @@ Game_Event.prototype.isEventTouched = function() {
 };
 
 Game_Event.prototype.touchActive = function() {
-	if (!this.page()) return;
-	const tag = /<ACTIVATE:[ ]TOUCH>/i;
+	const tag = /<ACTIVATE:[ ]*TOUCH>/i;
+	// Notetag check
+	if (this.event().note.match(tag)) return true;
+	// Comment tag check
 	for (const ev of this.list()) {
 		if ([108,408].contains(ev.code)) {
 			let note = ev.parameters[0];
@@ -74,22 +77,16 @@ Game_Event.prototype.touchActive = function() {
 };
 
 Game_Event.prototype.startMapEvent = function(x, y, triggers, normal) {
-	for (const event of $gameMap.eventsXy(x, y)) {
-		if (
-			event.isTriggerIn(triggers) &&
-			event.isNormalPriority() === normal
-		) {
-			event.start();
-		}
-	}
-};
-
-// -- For Debugging --
-Game_Player.prototype.getFront = function() {
-	const d = this._direction;
-	const x = $gameMap.roundXWithDirection(this.x, d);
-	const y = $gameMap.roundYWithDirection(this.y, d);
-	return $gameMap.eventsXyNt(x, y);
+	if (!$gameMap.isEventRunning()) {
+        for (const event of $gameMap.eventsXy(x, y)) {
+            if (
+                event.isTriggerIn(triggers) &&
+                event.isNormalPriority() === normal
+            ) {
+                event.start();
+            }
+        }
+    }
 };
 
 })();
