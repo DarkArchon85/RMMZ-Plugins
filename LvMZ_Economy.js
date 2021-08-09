@@ -61,7 +61,7 @@ if (!Imported['LvMZ_Core']) {
 
 /*:
  * @target MZ
- * @plugindesc [v1.5] Gives life to the world and its merchants by varying up
+ * @plugindesc [v1.6] Gives life to the world and its merchants by varying up
  * their prices based on several factors (including relations and supply).
  * @author LordValinar
  * @url https://github.com/DarkArchon85/RMMZ-Plugins
@@ -235,6 +235,8 @@ if (!Imported['LvMZ_Core']) {
  * ----------------------------------------------------------------------------
  * Changelog
  * ----------------------------------------------------------------------------
+ *
+ * v1.6 - Fixed not accounting for an invalid item when reading for stolen
  *
  * v1.5 - Fixed "logStolenItem()": Method to check arrays didn't work so 
  *        I implimented a function that WILL work.
@@ -908,6 +910,7 @@ Game_Party.prototype.numStolenGoods = function(item) {
 
 const gameParty_numItems = Game_Party.prototype.numItems;
 Game_Party.prototype.numItems = function(item) {
+	if (!item) return 0;
 	const num = gameParty_numItems.call(this, item);
 	const stolen = this.numStolenGoods(item);
 	if (this._showAll) {
