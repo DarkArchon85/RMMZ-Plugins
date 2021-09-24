@@ -1705,7 +1705,6 @@ Window_Relations.prototype.makeItemList = function() {
 Window_Relations.prototype.drawItem = function(index) {
     const item = this.itemAt(index); // friend or lover
     const rect = this.itemLineRect(index);
-	console.log(item); // debug
 	const sprite = this.sprite(item.actor);
 	const spriteX = rect.x + (sprite.width / 2);
 	const spriteY = rect.y + (sprite.height - 7);
