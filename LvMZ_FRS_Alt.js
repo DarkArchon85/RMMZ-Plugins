@@ -143,6 +143,19 @@ if (!Imported['LvMZ_Core']) {
  * @text --------------------------
  * @default ----------------------------------
  *
+ * @param immediateMenu
+ * @text Disable Actor Relations Select
+ * @type boolean
+ * @on Leader Relations Opens
+ * @off Choose Actor Relations
+ * @desc By toggling this option, when selecting the Relations
+ * menu option will go directly to leader's menu (if able).
+ * @default false
+ *
+ * @param paramBreak3
+ * @text --------------------------
+ * @default ----------------------------------
+ *
  * @param fc1
  * @text Friendship Bar Color 1
  * @desc Gradient colors (left) for the friendship bar.
@@ -604,6 +617,8 @@ if (!Imported['LvMZ_Core']) {
  * Changelog
  * ----------------------------------------------------------------------------
  *
+ * v1.31 - Moved code to add menu option, only if not using VisuMZ Menu Core 
+ *
  * v1.3 - Created this alternative version (shows both friendship and 
  *        romance bars on same actor)
  *
@@ -633,6 +648,8 @@ const newMember  = eval(lvParams['newMember']);
 const evPrefix   = String(lvParams['evPreName']);
 const evPostfix  = String(lvParams['evPostName']);
 const relationText = String(lvParams['relationWindowText']);
+// --
+const leaderMenu = eval(lvParams['immediateMenu']);
 // -- 
 const fc1A 		 = (lvParams['fc1Alpha']/100).percent();
 const colorFC1   = hexToRgba(lvParams['fc1'], fc1A);
@@ -1467,6 +1484,16 @@ Scene_Menu.prototype.createCommandWindow = function() {
 	this._commandWindow.setHandler("relations", this.commandPersonal.bind(this));
 };
 
+const sceneMenu_cmdPersonal = Scene_Menu.prototype.commandPersonal;
+Scene_Menu.prototype.commandPersonal = function() {
+	const sym = this._commandWindow.currentSymbol();
+	if (sym === "relations" && leaderMenu) {
+		this._actor = $gameParty.leader();
+		SceneManager.push(Scene_Relations);
+	}
+	sceneMenu_cmdPersonal.call(this);
+};
+
 const sceneMenu_onPersonalOk = Scene_Menu.prototype.onPersonalOk;
 Scene_Menu.prototype.onPersonalOk = function() {
 	const sym = this._commandWindow.currentSymbol();
@@ -1549,7 +1576,7 @@ Scene_Relations.prototype.switchActor = function() {
 		this._statusWindow.select(0);
 		this._statusWindow.activate();
 		SoundManager.playBuzzer();
-		console.log("Error -> Can't switch out an actor for an event!");
+		console.log("DebugError -> Can't switch out an actor for an event!");
 	}
 };
 
@@ -1584,16 +1611,18 @@ Window_Base.prototype.sprite = function(actor) {
 
 
 // --- WINDOW MENU_COMMAND ---
-const wmc_optionalCommands = Window_MenuCommand.prototype.addOriginalCommands;
-Window_MenuCommand.prototype.addOriginalCommands = function() {
-	wmc_optionalCommands.call(this);
-	this.addRelationsCommand();
-};
+if (!Imported['VisuMZ_1_MainMenuCore']) {
+	const wmc_optionalCommands = Window_MenuCommand.prototype.addOriginalCommands;
+	Window_MenuCommand.prototype.addOriginalCommands = function() {
+		wmc_optionalCommands.call(this);
+		this.addRelationsCommand();
+	};
 
-Window_MenuCommand.prototype.addRelationsCommand = function() {
-	const enabled = this.areRelationsEnabled();
-	this.addCommand("Relations", "relations", enabled);
-};
+	Window_MenuCommand.prototype.addRelationsCommand = function() {
+		const enabled = this.areRelationsEnabled();
+		this.addCommand("Relations", "relations", enabled);
+	};
+}
 
 Window_MenuCommand.prototype.areRelationsEnabled = function() {
 	const pc = $gameParty.leader();
@@ -1615,6 +1644,17 @@ Window_Relations.prototype.initialize = function(rect) {
 };
 
 Window_Relations.prototype.setActor = function(actor) {
+	if (!actor) {
+		this._actor = null;
+		SceneManager._scene.popScene();
+	}
+	const friends = actor.friends().length;
+	const events = actor.npcEvents().length;
+	if (!friends && !events) {
+		this._actor = null;
+		SceneManager._scene.popScene();
+		console.log("DebugError -> Actor has no relations!");
+	}
 	if (this._actor !== actor) {
 		this._actor = actor;
 		this.refresh();
@@ -1665,6 +1705,7 @@ Window_Relations.prototype.makeItemList = function() {
 Window_Relations.prototype.drawItem = function(index) {
     const item = this.itemAt(index); // friend or lover
     const rect = this.itemLineRect(index);
+	console.log(item); // debug
 	const sprite = this.sprite(item.actor);
 	const spriteX = rect.x + (sprite.width / 2);
 	const spriteY = rect.y + (sprite.height - 7);
