@@ -4,11 +4,11 @@
 // ============================================================================
 
 var Imported = Imported || {};
-Imported["HimeLordVChoiceOptions"] = true;
+Imported["HIME_LvMZ_MoreChoiceOptions"] = true;
 
 /*:
  * @target MZ
- * @plugindesc [v1.0] You can combine or set conditions in which your multiple choices shall appear. 
+ * @plugindesc [v1.1] You can combine or set conditions in which your multiple choices shall appear. 
  * @author HIME, LordValinar
  *
  * @ --------------------------------------------------------------------------
@@ -22,7 +22,7 @@ Imported["HimeLordVChoiceOptions"] = true;
  * @type number[]
  * @decimals 0
  * @desc Choice number(s) to change text for.
- * @default 
+ * @default []
  *
  * @arg text
  * @text Choice Text
@@ -46,7 +46,7 @@ Imported["HimeLordVChoiceOptions"] = true;
  * @type number[]
  * @decimals 0
  * @desc Number of choice to disable.
- * @default 
+ * @default []
  *
  * @arg formula
  * @text Choice Formula
@@ -65,7 +65,7 @@ Imported["HimeLordVChoiceOptions"] = true;
  * @type number[]
  * @decimals 0
  * @desc The choice number to hide.
- * @default 
+ * @default []
  *
  * @arg formula
  * @text Choice Formula
@@ -171,7 +171,7 @@ Imported["HimeLordVChoiceOptions"] = true;
  * ----------------------------------------------------------------------------
  *
  * Free for noncommercial use, with credit to both HIME and LordValinar
- * For commercial use, please contact HIME at any of the links below
+ * For commercial use, please check HIME's ToU at any of the links below
  * Do NOT remove the Authors of this plugin
  *
  * Patreon: https://www.patreon.com/himeworks
@@ -196,7 +196,7 @@ Imported["HimeLordVChoiceOptions"] = true;
 const pluginName = 'HIME_LvMZ_MoreChoiceOptions';
 
 PluginManager.registerCommand(pluginName, 'choiceText', args => {
-	const numbers = JSON.parse(args.num);
+	const numbers = JSON.parse(args.num).map(n => Number(n));
 	const formula = args.formula.length > 0 ? eval(args.formula) : true;
 	for (const num of numbers) {
 		let choiceNum = Math.floor(num) - 1;
@@ -205,7 +205,7 @@ PluginManager.registerCommand(pluginName, 'choiceText', args => {
 });
 
 PluginManager.registerCommand(pluginName, 'disableChoice', args => {
-	const numbers = JSON.parse(args.num);
+	const numbers = JSON.parse(args.num).map(n => Number(n));
 	const formula = args.formula.length > 0 ? eval(args.formula) : true;
 	for (const num of numbers) {
 		let choiceNum = Math.floor(num) - 1;
@@ -214,7 +214,7 @@ PluginManager.registerCommand(pluginName, 'disableChoice', args => {
 });
 
 PluginManager.registerCommand(pluginName, 'hideChoice', args => {
-	const numbers = JSON.parse(args.num);
+	const numbers = JSON.parse(args.num).map(n => Number(n));
 	const formula = args.formula.length > 0 ? eval(args.formula) : true;
 	for (const num of numbers) {
 		let choiceNum = Math.floor(num) - 1;
@@ -238,10 +238,9 @@ Game_Message.prototype.clear = function() {
 
 const gameMsg_choices = Game_Message.prototype.choices;
 Game_Message.prototype.choices = function() {
-	gameMsg_choices.call(this);
 	let res = gameMsg_choices.call(this);
     for (const key in this._customChoiceText) {
-		res[key] = this._customChoiceText[key]
+		res[key] = this._customChoiceText[key];
     }
     return res;
 };
@@ -253,12 +252,12 @@ Game_Message.prototype.choiceText = function(choiceNum) {
 
 /* Returns whether the specified choice is disabled */
 Game_Message.prototype.isChoiceDisabled = function(choiceNum) {
-	return this._disabledChoiceConditions[choiceNum];
+	return !!this._disabledChoiceConditions[choiceNum];
 };
 
 /* Returns whether the specified choice is hidden */
 Game_Message.prototype.isChoiceHidden = function(choiceNum) {
-	return this._hiddenChoiceConditions[choiceNum];
+	return !!this._hiddenChoiceConditions[choiceNum];
 };
 
 Game_Message.prototype.backupChoices = function() {
@@ -275,11 +274,15 @@ Game_Message.prototype.setChoiceText = function(choiceNum, text) {
 };
 
 Game_Message.prototype.disableChoice = function(choiceNum, bool) {
-	this._disabledChoiceConditions[choiceNum] = bool;
+	if (typeof bool === "boolean") {
+		this._disabledChoiceConditions[choiceNum] = bool;
+	}
 };
 
 Game_Message.prototype.hideChoice = function(choiceNum, bool) {
-	this._hiddenChoiceConditions[choiceNum] = bool;
+	if (typeof bool === "boolean") {
+		this._hiddenChoiceConditions[choiceNum] = bool;
+	}
 };
 
 
@@ -293,7 +296,7 @@ Game_Interpreter.prototype.setupChoices = function(params) {
 
 Game_Interpreter.prototype.combineChoices = function() {  
 	/* IMPORTANT If we don't clone this, we will modify the event permanently */
-	this._list = JSON.parse(JSON.stringify(this._list))
+	this._list = JSON.parse(JSON.stringify(this._list));
 	const currIndex = this._index;
 	const firstCmd = this._list[this._index];
 	let numChoices = 0;
@@ -301,7 +304,7 @@ Game_Interpreter.prototype.combineChoices = function() {
 	while (this._index < this._list.length) {
 		let cmd = this._list[this._index];
 		let nextCmd = this._list[this._index+1];
-		if (cmd.indent === this._indent)
+		if (cmd.indent === this._indent) {
 			/* Reached "End Choices" command. See if next command is "Show Choices" */
 			if (cmd.code === 404 && (nextCmd === undefined || nextCmd.code !== 102)) {
 				break;
@@ -334,7 +337,8 @@ Game_Interpreter.prototype.combineChoices = function() {
 				cmd.parameters[0] = numChoices;
 				numChoices++;
 			}
-			this._index++;
+		}
+		this._index++;
 	}
 	/* Go back to where we left off */
 	this._index = currIndex;    
@@ -381,8 +385,8 @@ Window_ChoiceList.prototype.makeCommandList = function() {
 	let needsUpdate = false;
 	for (let i = this._list.length; i > -1; i--) {
 		if ($gameMessage.isChoiceHidden(i)) {
-			this._list.splice(i, 1)
-			$gameMessage._choices.splice(i, 1)        
+			this._list.splice(i, 1);
+			$gameMessage._choices.splice(i, 1);
 			needsUpdate = true;
 		} else { /* Add this to our choice map */
 			this._choiceMap.unshift(i);
