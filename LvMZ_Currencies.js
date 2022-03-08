@@ -605,6 +605,7 @@ if (Imported['LvMZEconomy']) {
 	
 	Scene_Shop.prototype.doShopSell = function(number) {
 		const shop = MapManager.event().shopData();
+		const index = this._sellWindow.index();
 		shop._windowShopper = false;
 		if (shop._stock[index] === 255) return;
 		if (!this.checkMeta(this._item)) {
