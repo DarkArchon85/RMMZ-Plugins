@@ -1796,7 +1796,7 @@ Game_Event.prototype.name = function() {
 
 Game_Event.prototype.objectId = function(pageIndex = false) {
 	const value = [this._mapId, this._eventId];
-	if (includePage) value.push(this._pageIndex);
+	if (pageIndex) value.push(this._pageIndex);
 	return value;
 };
 
@@ -2060,4 +2060,5 @@ Game_SelfVariables.prototype.setValue = function(key, value) {
 
 Game_SelfVariables.prototype.onChange = function() {
 	$gameMap.requestRefresh();
+
 };
