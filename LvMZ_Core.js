@@ -96,8 +96,12 @@ Array.prototype.matches = function(array) {
     for (let i = 0; i < this.length; i++) {
 		const typeA = Object.prototype.toString.call(this[i]);
 		const typeB = Object.prototype.toString.call(array[i]);
-		if (typeA !== typeB || this[i] !== array[i]) return false;
-		if (!this[i].matches(array[i])) return false;
+		if (typeA !== typeB) return false;
+		if (typeof this[i] === "object") {
+            if (!this[i].matches(array[i])) return false;
+		} else if (this[i] !== array[i]) {
+			return false;
+		}
     }
     return true;
 };
@@ -424,7 +428,7 @@ LvParams.prototype.targetFromPos = function(x, y, create=false) {
 
 const Lv = new class {
 	constructor() {
-		this._data = {};
+		this._debug = {};
 	}
 	
 	plugin(pluginName) {
@@ -433,7 +437,7 @@ const Lv = new class {
 			alert("LvError("+pluginName+"): This plugin doesn't exist!");
 		}
 		return LvMZ[pluginName] || {
-			name: "Invalid",
+			name: "Invalid Plugin",
 			desc: "This plugin doesn't exist",
 			version: 0
 		};
@@ -502,25 +506,25 @@ const Lv = new class {
 	}
 
 	debug(id, text, wait=60) {
-		if (!this._data[id]) {
-			this._data[id] = Math.max(0, wait);
+		if (!this._debug[id]) {
+			this._debug[id] = Math.max(0, wait);
 			console.log(text);
 		}
 	}
 	
 	update() {
-		for (const id in this._data) {
-			let wait = this._data[id] || 0;
+		for (const id in this._debug) {
+			let wait = this._debug[id] || 0;
 			if (wait > 0) {
-				this._data[id] -= 1;
+				this._debug[id] -= 1;
 			} else {
-				delete this._data[id];
+				delete this._debug[id];
 			}
 		}
 	}
 	
 	clearDebug() {
-		this._data = {};
+		this._debug = {};
 	}
 	
 	checkTag(object, noteTag) {
@@ -546,7 +550,7 @@ const Lv = new class {
 //=============================================================================
 /*:
  * @target MZ
- * @plugindesc [v1.0] Core functionality and quality of life settings.
+ * @plugindesc [v1.2] Core functionality and quality of life settings.
  * @author LordValinar
  * @url https://github.com/DarkArchon85/RMMZ-Plugins
  *
@@ -621,11 +625,19 @@ const Lv = new class {
  * @desc Re-Equip an armor or weapon if leaving an empty slot.
  * @default []
  *
- * @param dualWielder
+ * @param dualWieldState
  * @text Two Weapon Fighting State
  * @parent -- General Settings --
  * @type state
  * @desc State ID to add dual wielder trait
+ * NOTE: See help for details
+ * @default 0
+ *
+ * @param noShieldState
+ * @text Shield Slot Seal State
+ * @parent -- General Settings --
+ * @type state
+ * @desc State ID to seal shield equip slot
  * NOTE: See help for details
  * @default 0
  *
@@ -841,6 +853,10 @@ const Lv = new class {
  * This plugin is to help make my projects (and hopefully yours) easier with
  * quality of life functions. First we'll go over the settings and end with 
  * the available global functions.
+ * 
+ * ----------------------------------------------------------------------------
+ * Instructions
+ * ----------------------------------------------------------------------------
  *
  * -- General Settings --
  * 
@@ -882,7 +898,13 @@ const Lv = new class {
  *
  * Two Weapon Fighting State: This will require you to create a State that 
  * adds the Dual Wielder trait (slot type), and then put that State ID here.
- * What this does is allow
+ * What this does is allow the state to be added when wielding a single-
+ * handed weapon and no shield. If a two-handed weapon (notetags below) or 
+ * shield is equipped, the state / dual wielder trait are removed.
+ * Possible tags:
+ *  <TwoHanded>
+ *  <Two-Handed>
+ *  <Two Handed>
  *
  * Toggle Party Limit: Turn this ON if you want to be able to decide the 
  * maximum size of your party. Probably wise not to go TOO high..
@@ -1181,10 +1203,15 @@ const Lv = new class {
  *   to activate something all the way across the map!
  *
  *
- * Game_Event.prototyep.name = function() {};
+ * Game_Event.prototype.name = function() {};
  *
  *   Checks for the event name, first by notetag, then comment, and finally
  *   loads it from the map data.
+ *
+ *
+ * Game_Event.prototype.setName = function(name) {};
+ *
+ *   Allows you to set a new name (or clear it) for an event.
  *
  *
  * Game_Event.prototype.objectId = function(pageIndex = false) {};
@@ -1206,18 +1233,13 @@ const Lv = new class {
  *  - speak(text)       = the MAIN function of this class
  *
  * $gameSelfVar (uses the Game_SelfVariables class)
- *  - value(key)        = [mapId, eventId, type, variableId]
+ *  - value(key)           = [mapId, eventId, type, variableId]
  *    Type: "SelfVar" or "SelfSwitch"
  *  - setValue(key, value) = use key above, and an appropriate value
- *    "SelfVar" = numerical or string data
- *    "SelfSwitch" = true or false
- *  - clear()           = Wipes all data 
- * 
- * ----------------------------------------------------------------------------
- * Instructions
- * ----------------------------------------------------------------------------
- *
- *
+ *    "SelfVar"            = numerical or string data
+ *    "SelfSwitch"         = true or false
+ *  - removeValue(key)     = delete data by key
+ *  - clear()              = wipes all data 
  *
  * ----------------------------------------------------------------------------
  * Terms of Use
@@ -1232,6 +1254,8 @@ const Lv = new class {
  * Changelog
  * ----------------------------------------------------------------------------
  *
+ * v1.2 - Fixed Two Handed functionality (seals the shield slot)
+ * v1.1 - More name functionality for Game_Event, and misc. fixes.
  * v1.0 - Plugin complete!
  *
  * ----------------------------------------------------------------------------
@@ -1323,7 +1347,7 @@ var LvMZ = {};
 LvMZ.Core = {
 	name: "LvMZ_Core",
 	desc: "Core functionality and quality of life settings.",
-	version: 1.0
+	version: 1.2
 };
 
 // -- Global Variables
@@ -1343,7 +1367,8 @@ const permaDeath  = params.value('permaDeath','bool');
 const maxLvCtrl   = params.value('maxLevelControl','bool');
 const levelCap    = params.value('maxLevel','num');
 const autoEquips  = params.value('autoEquip','json');
-const dualWield	  = params.value('dualWielder','num');
+const dualWield	  = params.value('dualWieldState','num');
+const noShield    = params.value('noShieldState','num');
 const partyLimit  = params.value('usePartyLimit','bool');
 const defSize     = params.value('partyLimit','num');
 const useDirMove  = params.value('dirTurn','bool');
@@ -1591,10 +1616,11 @@ Game_Actor.prototype.setup = function(actorId) {
 
 const gameActor_changeEquip = Game_Actor.prototype.changeEquip;
 Game_Actor.prototype.changeEquip = function(slotId, item) {
+	const etypeId = this.equipSlots()[slotId];
 	const oldItem = this.equips()[slotId];
-	const autoItem = this.autoEquipItem(slotId);
+	const autoItem = this.autoEquipItem(etypeId);
 	gameActor_changeEquip.call(this, slotId, item);
-	if (dualWield > 0) {
+	if (dualWield > 0 && noShield > 0 && etypeId === 1) {
 		this.twoHandedCheck(oldItem, slotId, item);
 	}
 	if (oldItem && autoItem) {
@@ -1608,24 +1634,29 @@ Game_Actor.prototype.changeEquip = function(slotId, item) {
 };
 
 Game_Actor.prototype.twoHandedCheck = function(oldItem, slotId, newItem) {
-	if (!this.equips()[slotId]) {
-		// Re-add the Two Weapon Fighting state|trait
-		if (this.weapon2H(oldItem) && !!this._dualWielder) {
+	if (!this.equips()[slotId] && this.weapon2H(oldItem)) {
+		// Unequip - Unlock shield slot 
+		this.removeState(noShield);
+		// Dual Wielder - re-add the state
+		if (!!this._dualWielder) {
 			this._dualWielder = false;
 			this.addState(dualWield);
 		}
-	} else {
+	} else if (this.weapon2H(newItem)) {
 		// Two Handed Weapons: If a 2h weapon is equipped, 
-		// we remove Dual Wielder (if applicable)
-		if (this.weapon2H(newItem)) {
-			if (this.isStateAffected(dualWield)) {
-				// Allows re-equip of the Two Weapon Fighting state after no 
-				// longer wielding a Two Handed Weapon!
-				this._dualWielder = true;
-			}
+		// we remove Dual Wielder and lock shield slot (if applicable)
+		if (this.isStateAffected(dualWield)) {
+			// Allows re-equip of the Two Weapon Fighting state after no 
+			// longer wielding a Two Handed Weapon!
+			this._dualWielder = true;
 			this.removeState(dualWield);
-		} else if (!!this._dualWielder) {
-			// If equipping a normal weapon, we can re-add the state|trait
+		}
+		this.addState(noShield);
+	} else {
+		// Remove the shield seal state (if applicable)
+		this.removeState(noShield);
+		// If equipping a normal weapon, we can re-add the state|trait
+		if (!!this._dualWielder) {
 			this._dualWielder = false;
 			this.addState(dualWield);
 		}
@@ -1633,23 +1664,17 @@ Game_Actor.prototype.twoHandedCheck = function(oldItem, slotId, newItem) {
 };
 
 Game_Actor.prototype.weapon2H = function(item) {
-	return (
-		item && DataManager.isWeapon(item) &&
-		Lv.checkTag(item, /<TWO[\-_ ]*HANDED>/i)
-	);
+	return Lv.checkTag(item, /<TWO[\-_ ]*HANDED>/i);
 };
 
-Game_Actor.prototype.autoEquipItem = function(slotId) {
-	const etypeId = this.equipSlots()[slotId];
+Game_Actor.prototype.autoEquipItem = function(etypeId) {
 	const equips = autoEquips.filter(e => 
-		Number(e.actorId) === this._actorId && 
-		Number(e.type) === etypeId
+		Number(e.actorId) === this._actorId && Number(e.type) === etypeId
 	)[0];
-	return equips 
-		? etypeId === 1 
-		? $dataWeapons[equips.id] 
-		: $dataArmors[equips.id] 
-		: null;
+	if (equips) {
+		return etypeId === 1 ? $dataWeapons[equips.id] : $dataArmors[equips.id];
+	}
+	return null;
 };
 
 // ===========================================================================
@@ -1787,14 +1812,44 @@ Game_Player.prototype.extendActivate = function(length = 1) {
 
 
 // --- GAME EVENT -------------------------------------------------------------
-Game_Event.prototype.name = function() {
-	const tag = /<NAME[: ]+([A-Z]+)>/i;
-	if (Lv.checkTag(this.event(), tag)) return RegExp.$1;
-	if (Lv.checkComment(this, tag)) return RegExp.$1;
-	return this.event().name;
+const gameEv_initMembers = Game_Event.prototype.initMembers;
+Game_Event.prototype.initMembers = function() {
+	gameEv_initMembers.call(this);
+	this._name = "";
 };
 
-Game_Event.prototype.objectId = function(pageIndex = false) {
+const gameEv_clearPgSettings = Game_Event.prototype.clearPageSettings;
+Game_Event.prototype.clearPageSettings = function() {
+	gameEv_clearPgSettings.call(this);
+	this.setName("");
+};
+
+const gameEv_setupPgSettings = Game_Event.prototype.setupPageSettings;
+Game_Event.prototype.setupPageSettings = function() {
+	gameEv_setupPgSettings.call(this);
+	this.initName();
+};
+
+Game_Event.prototype.initName = function() {
+	const nameTag = /<NAME[: ]+([^>]+)>/i;
+	if (Lv.checkTag(this.event(), nameTag)) {
+		this.setName(RegExp.$1);
+	} else if (Lv.checkComment(this, nameTag)) {
+		this.setName(RegExp.$1);
+	} else {
+		this.setName(this.event().name);
+	}
+};
+
+Game_Event.prototype.name = function() {
+	return this._name;
+};
+
+Game_Event.prototype.setName = function(name) {
+	this._name = name;
+};
+
+Game_Event.prototype.objectId = function(pageIndex=false) {
 	const value = [this._mapId, this._eventId];
 	if (pageIndex) value.push(this._pageIndex);
 	return value;
@@ -1912,6 +1967,11 @@ LvMZ_RemoteEvent.prototype.event = function() {
 
 LvMZ_RemoteEvent.prototype.refresh = function() {
 	this._pageIndex = this._erased ? -1 : this.findProperPageIndex();
+	if (this._pageIndex >= 0) {
+		this.initName();
+	} else {
+		this.setName("");
+	}
 };
 
 
@@ -2034,7 +2094,7 @@ Game_SelfVariables.prototype.value = function(key) {
 		case "selfvar":    return this._data[key] || 0;
 		case "selfswitch": return !!this._data[key];
 	}
-	return undefined;
+	return null;
 };
 
 Game_SelfVariables.prototype.setValue = function(key, value) {
@@ -2058,7 +2118,21 @@ Game_SelfVariables.prototype.setValue = function(key, value) {
 	this.onChange();
 };
 
+Game_SelfVariables.prototype.removeValue = function(key) {
+	if (typeof key === "string") key = key.split(","); // failsafe
+	if (!Array.isArray(key) || key.length < 3) return;
+	switch (key[2].toLowerCase()) {
+		case "selfvar": {
+			let index = this._data.findIndex(obj => obj.matches(key));
+			if (index >= 0) this._data.splice(index, 1);
+		} break;
+		case "selfswitch":
+			delete this._data[key];
+			break;
+	}
+	this.onChange();
+};
+
 Game_SelfVariables.prototype.onChange = function() {
 	$gameMap.requestRefresh();
-
 };
