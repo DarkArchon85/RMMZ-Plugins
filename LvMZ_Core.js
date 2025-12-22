@@ -2118,21 +2118,6 @@ Game_SelfVariables.prototype.setValue = function(key, value) {
 	this.onChange();
 };
 
-Game_SelfVariables.prototype.removeValue = function(key) {
-	if (typeof key === "string") key = key.split(","); // failsafe
-	if (!Array.isArray(key) || key.length < 3) return;
-	switch (key[2].toLowerCase()) {
-		case "selfvar": {
-			let index = this._data.findIndex(obj => obj.matches(key));
-			if (index >= 0) this._data.splice(index, 1);
-		} break;
-		case "selfswitch":
-			delete this._data[key];
-			break;
-	}
-	this.onChange();
-};
-
 Game_SelfVariables.prototype.onChange = function() {
 	$gameMap.requestRefresh();
 };
