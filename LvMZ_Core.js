@@ -119,7 +119,7 @@ Object.defineProperty(Array.prototype, "matches", {
  */
 Object.prototype.matches = function(obj) {
 	return Object.keys(this).every(key => {
-		return (this[key] instanceof Array && obj[key] instanceof Array)
+		return (typeof this[key] === "object" && typeof obj[key] === "object")
 			? this[key].matches(obj[key])
 			: this[key] === obj[key];
 	});
@@ -904,6 +904,7 @@ const Lv = new class {
  * Possible tags:
  *  <TwoHanded>
  *  <Two-Handed>
+ *  <Two_Handed>
  *  <Two Handed>
  *
  * Toggle Party Limit: Turn this ON if you want to be able to decide the 
@@ -2111,7 +2112,7 @@ Game_SelfVariables.prototype.setValue = function(key, value) {
 			if (value) {
 				this._data[key] = true;
 			} else {
-				delete this._data[key];
+				this.removeValue(key);
 			}
 			break;
     }
@@ -2125,4 +2126,3 @@ Game_SelfVariables.prototype.removeValue = function(key) {
 Game_SelfVariables.prototype.onChange = function() {
 	$gameMap.requestRefresh();
 };
-
