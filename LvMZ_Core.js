@@ -2118,6 +2118,11 @@ Game_SelfVariables.prototype.setValue = function(key, value) {
 	this.onChange();
 };
 
+Game_SelfVariables.prototype.removeValue = function(key) {
+	delete this._data[key];
+};
+
 Game_SelfVariables.prototype.onChange = function() {
 	$gameMap.requestRefresh();
 };
+
