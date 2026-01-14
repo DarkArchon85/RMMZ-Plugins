@@ -291,23 +291,11 @@ MapManager.isTilePassable = function(x, y) {
  */
 MapManager.simulateEvents = function(mapId) {
 	if ($gameMap.mapId() == mapId) return $gameMap.events();
-	let list = DataManager.map(mapId).events.filter(ev => !!ev);
 	// Replicates Game_Map's method to setup events
+	const list = DataManager.map(mapId).events.filter(ev => !!ev);
 	const events = [];
 	for (const event of list) {
 		events[event.id] = new LvMZ_RemoteEvent(mapId, event.id);
-	}
-	if (Imported["LvMZ_CustomEvents"]) {
-		// Load up custom events
-		list = $gameMap.loadEvents(mapId).filter(ev => !!ev);
-		for (const event of list) {
-			if (event.custom) {
-				let gameClass = event.custom;
-				events[event.id] = new gameClass(mapId, event.id);
-			} else {
-				events[event.id] = new Game_CustomEvent(mapId, event.id);
-			}
-		}
 	}
 	return events;
 };
@@ -550,7 +538,7 @@ const Lv = new class {
 //=============================================================================
 /*:
  * @target MZ
- * @plugindesc [v1.2] Core functionality and quality of life settings.
+ * @plugindesc [v1.3] Core functionality and quality of life settings.
  * @author LordValinar
  * @url https://github.com/DarkArchon85/RMMZ-Plugins
  *
@@ -1255,6 +1243,7 @@ const Lv = new class {
  * Changelog
  * ----------------------------------------------------------------------------
  *
+ * v1.3 - Moved simulateEvents for LvMZ_CustomEvents to its owner plugin
  * v1.2 - Fixed Two Handed functionality (seals the shield slot)
  * v1.1 - More name functionality for Game_Event, and misc. fixes.
  * v1.0 - Plugin complete!
@@ -1348,7 +1337,7 @@ var LvMZ = {};
 LvMZ.Core = {
 	name: "LvMZ_Core",
 	desc: "Core functionality and quality of life settings.",
-	version: 1.2
+	version: 1.3
 };
 
 // -- Global Variables
@@ -1478,10 +1467,9 @@ BattleManager.checkPermaDeath = function() {
 		if (actor.meta.Immortal) { battler.setHp(1); continue; }
 		// Number of Lives before truly dead
 		if (actor._numOfLives > 0) {
-				actor._numOfLives--;
-				battler.setHp(1); // revive
-				continue;
-			}
+			actor._numOfLives--;
+			battler.setHp(1); // revive
+			continue;
 		}
 		// All others will be permanently removed from the party
 		$gameParty.removeActor(battler.actorId());
