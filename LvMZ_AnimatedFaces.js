@@ -4,83 +4,73 @@
 // ============================================================================
 
 var Imported = Imported || {};
-Imported["LvMZAnimatedFaces"] = true;
+Imported["LvMZ_AnimatedFaces"] = true;
+
+if (!Imported["LvMZ_Core"]) {
+	function LvParams() {
+		this.initialize(...arguments);
+	}
+
+	LvParams.prototype.initialize = function(pluginName) {
+		this._data = PluginManager.parameters(pluginName);
+	};
+
+	LvParams.prototype.value = function() {
+		const key = arguments[0];
+		switch (arguments[1]) {
+			case 'arr':  return this._data[key].split(arguments[2] || ",");
+			case 'num':  return Number(this._data[key]);
+			case 'bool': return this._data[key].toLowerCase() === "true";
+			case 'eval': return this.eval(this._data[key]);
+			case 'jnum': return this.object(key).map(n => Number(n));
+			case 'json': return this.object(key).map(e => JSON.parse(e));
+			case 'strL': return this._data[key].toLowerCase();
+			case 'strU': return this._data[key].toUpperCase();
+			case '%': 	 return this.percent(key, arguments[2], arguments[3]);
+		}
+		return this._data[key];
+	};
+
+	LvParams.prototype.eval = function(text) {
+		if (text.match(/RANDOM[: ]+(\d+)[\-~, ](\d+)/gi)) {
+			const min = Math.ceil(Number(RegExp.$1));
+			const max = Math.floor(Number(RegExp.$2));
+			return ~~(Math.random() * (max - min + 1) + min);
+		}
+		text = text.replace(/[\\]+/g, '');
+		text = text.replace(/([av])\[(\d+)\]/gi, (_, p1, p2) => {
+			switch (p1.toUpperCase()) {
+				case 'A': return "$gameParty.battleMembers()["+Number(p2-1)+"]";
+				case 'V': return "$gameVariables.value("+p2+")";
+			}
+		});
+		try {
+			const value = eval(text);
+			return isNaN(value) ? 0 : Math.max(value, 0);
+		} catch(e) {
+			console.log("---ERROR(LvParams.prototype.eval)---");
+			console.log("Eval: " + text);
+			return 0;
+		}
+	};
+
+	LvParams.prototype.object = function(key) {
+		return JSON.parse(this._data[key]);
+	};
+
+	LvParams.prototype.percent = function(key, min = -1, max = 1) {
+		const value = Number(this._data[key]);
+		return Number(value.toFixed(2)).clamp(Number(min), Number(max));
+	};
+} // end of import 
 
 //=============================================================================
 /*:
  * @target MZ
- * @plugindesc [v1.3] Animates face sets to appear as if speaking. Or when 
+ * @plugindesc [v1.4] Animates face sets to appear as if speaking. Or when 
  * idle, it will run that animation too (blinking).
  * @author LordValinar
  * @url https://github.com/DarkArchon85/RMMZ-Plugins
- *
- * @help
- * ============================================================================
- * Introduction
- * ============================================================================
- *
- *  This plugin will allow you to have animated faces when using Show Text 
- * commands. The face must have a prefix (default: 'anim_') in order to be 
- * considered "animated" by the plugin. There are default settings in case 
- * you wish to just "plug n' play", but they can also be altered, or even 
- * changed via a plugin command on the fly with events!
- *
- *  Minor setup required. You will have to setup a face set with the top 
- * row for "Idle" animations (typically blinking eyes), and the bottom row 
- * for "Speaking".
- *
- * ============================================================================
- * Plugin Commands
- * ============================================================================
- *
- * The plugin comes pre-packaged and ready to go; however, if at any time you 
- * with to alter the idle animations or maximum amount of frames for idle or 
- * speaking animations, then you can change them on the fly!
- *
- * ---
- *
- * Idle Delay:
- *   Set a minimum and maximum for the delay between idle animations. The 
- *   actual amount is random chosen from these numbers. 
- *
- * ---
- *
- * Max Frames:
- *   Set a maximum number of frames for the Idle and Speaking animations.
- *   There is technically no limit, just have the face set's width match 
- *   the maximum possible frames (each frame = 48x48 pixels).
- *
- * ============================================================================
- * Terms of Use
- * ============================================================================
- *
- * Free to use and modify for commercial and noncommercial games, with credit.
- * Do NOT remove my name from the Author of this plugin
- * Do NOT reupload this plugin (modified or otherwise) anywhere other than the 
- * RPG Maker MV main forums: https://forums.rpgmakerweb.com/index.php
- *
- * ============================================================================
- * Credits
- * ============================================================================
- *
- * Myself (LordValinar) and Fogomax (for the original source from the 
- * TTKMessagePlus plugin). 
- *
- * ============================================================================
- * Changelog
- * ============================================================================
- *
- *  v1.3 - Fixed previous version the idle animation stopped working, and 
- *         also fixed the animation delay wasn't working!
- *
- *  v1.2 - Fixed error with "this.pause" and added in battle scene animations.
- *         Also fixed an error when using wait codes, the image disappeared.
- *
- *  v1.1 - Added in a 'stop' to animations when "waiting" in the message.
- *
- *  v1.0 - Plugin Converted from MV
- *
- * ============================================================================
  *
  * @param AnimFacePrefix
  * @text Animated Faces Prefix
@@ -119,6 +109,14 @@ Imported["LvMZAnimatedFaces"] = true;
  * @desc How many frames to run speaking face animation
  * @default 3
  *
+ * @param AnimFrames
+ * @text Animation Delay Frames
+ * @type number
+ * @decimals 0
+ * @min 1
+ * @desc How many frames between frame animations?
+ * @default 6
+ *
  * @ --------------------------------------------------------------------------
  *
  * @command setDelay
@@ -129,6 +127,8 @@ Imported["LvMZAnimatedFaces"] = true;
  * @arg minDelay
  * @text Minimum Delay
  * @type number
+ * @min 0
+ * @max 9999
  * @desc What is the minimum amount of frames to wait 
  * before cycling through the idle face animation?
  * @default 90
@@ -136,6 +136,8 @@ Imported["LvMZAnimatedFaces"] = true;
  * @arg maxDelay
  * @text Maximum Delay
  * @type number
+ * @min 0
+ * @max 9999
  * @desc What is the maximum amount of frames to wait 
  * before cycling through the idle face animation?
  * @default 240
@@ -169,19 +171,97 @@ Imported["LvMZAnimatedFaces"] = true;
  * @text Reset Settings
  * @desc Reset delay and max frame settings.
  *
+ *
+ * @help
+ * ============================================================================
+ * Introduction
+ * ============================================================================
+ *
+ *  This plugin will allow you to have animated faces when using Show Text 
+ * commands. The face must have a prefix (default: 'anim_') in order to be 
+ * considered "animated" by the plugin. There are default settings in case 
+ * you wish to just "plug n' play", but they can also be altered, or even 
+ * changed via a plugin command on the fly with events!
+ *
+ *  Minor setup required. You will have to setup a face set with the top 
+ * row for "Idle" animations (typically blinking eyes), and the bottom row 
+ * for "Speaking".
+ *
+ * ============================================================================
+ * Plugin Commands
+ * ============================================================================
+ *
+ * The plugin comes pre-packaged and ready to go; however, if at any time you 
+ * wish to alter the idle animations or maximum amount of frames for idle or 
+ * speaking animations, then you can change them on the fly!
+ *
+ * ---
+ *
+ * Idle Delay:
+ *   Set a minimum and maximum for the delay between idle animations. The 
+ *   actual amount is random chosen from these numbers. 
+ *
+ * ---
+ *
+ * Max Frames:
+ *   Set a maximum number of frames for the Idle and Speaking animations.
+ *   There is technically no limit, just have the face set's width match 
+ *   the maximum possible frames (each frame = 48x48 pixels).
+ *
+ * ============================================================================
+ * Terms of Use
+ * ============================================================================
+ *
+ * Free to use and modify for commercial and noncommercial games, with credit.
+ * Do NOT remove my name from the Author of this plugin
+ * Do NOT reupload this plugin (modified or otherwise) anywhere other than the 
+ * RPG Maker Web main forums: https://forums.rpgmakerweb.com/index.php
+ *
+ * ============================================================================
+ * Credits
+ * ============================================================================
+ *
+ * Myself (LordValinar) and Fogomax (for the original source from the 
+ * TTKMessagePlus plugin). 
+ *
+ * ============================================================================
+ * Changelog
+ * ============================================================================
+ *
+ *  v1.4 - Added update frame tick (default 6 frames) for face animations, 
+ *         and added load listern so face images load properly
+ *
+ *  v1.3 - Fixed previous version the idle animation stopped working, and 
+ *         also fixed the animation delay wasn't working!
+ *
+ *  v1.2 - Fixed error with "this.pause" and added in battle scene animations.
+ *         Also fixed an error when using wait codes, the image disappeared.
+ *
+ *  v1.1 - Added in a 'stop' to animations when "waiting" in the message.
+ *
+ *  v1.0 - Plugin Converted from MV
+ *
  */
 //=============================================================================
+
+var LvMZ = LvMZ || {};
+LvMZ.AnimatedFaces = {
+	name: "Animated Faces",
+	desc: "Adds blinking(idle) and speaking animations",
+	version: 1.4
+};
 
 (() => {
 'use strict';
 
-const pluginName = 'LvMZ_AnimatedFaces';
-const lvParams = PluginManager.parameters(pluginName);
-const animPrefix = lvParams['AnimFacePrefix'];
-const minAnimDelay = Number(lvParams['MinAnimDelay']);
-const maxAnimDelay = Number(lvParams['MaxAnimDelay']);
-const idleFrames = Number(lvParams['MaxIdleFrames']);
-const speakFrames = Number(lvParams['MaxSpeakFrames']);
+const pluginName   = 'LvMZ_AnimatedFaces';
+const params       = new LvParams(pluginName);
+const animPrefix   = params.value('AnimFacePrefix');
+const minAnimDelay = params.value('MinAnimDelay','num');
+const maxAnimDelay = params.value('MaxAnimDelay','num');
+const idleFrames   = params.value('MaxIdleFrames','num');
+const speakFrames  = params.value('MaxSpeakFrames','num');
+const animTick	   = params.value('AnimFrames','num');
 
 /******************************************************************************
 	rmmv_managers.js
@@ -215,13 +295,13 @@ Game_Message.prototype.initialize = function() {
 };
 
 Game_Message.prototype.setAnimationDelay = function(min, max) {
-	this._minAnimDelay = min;
-	this._maxAnimDelay = max;
+	this._minAnimDelay = Number(min);
+	this._maxAnimDelay = Number(max);
 };
 
 Game_Message.prototype.setAnimationFrames = function(idle, speak) {
-	this._animIdleFrames = idle - 1;
-	this._animSpeakFrames = speak - 1;
+	this._animIdleFrames = Number(idle) - 1;
+	this._animSpeakFrames = Number(speak) - 1;
 }
 
 Game_Message.prototype.animatedFace = function() {
@@ -256,44 +336,46 @@ Scene_Battle.prototype.update = function() {
 const windowMsg_init = Window_Message.prototype.initialize;
 Window_Message.prototype.initialize = function(rect) {
 	windowMsg_init.call(this, rect);
-	this._animFaceSide = 'left';
-	this._afIdleY		 = -1;
-	this._afSpeakY 		 = -1;
-	this._afMaxFrames    = 0;
-	this._afSpeakFrames  = 0;
-	this._afDelay 		 = [0,0];
-	this._animFaceIndex	 = 0;
-	this._afTick 		 = 0;
+	this._afSide        = 'left';
+	this._afIdleY		= -1;
+	this._afSpeakY 		= -1;
+	this._afMaxFrames   = 0;
+	this._afSpeakFrames = 0;
+	this._afDelay 		= [0,0];
+	this._afIndex	    = 0;
+	this._afWait 		= 0;
+	this._afTick 		= 0;
 };
 
 // New - Where the magic happens! (Credit: Fogomax for the original function I altered from)
 Window_Message.prototype.updateFaceAnimation = function() {
 	if (this._waitCount > 0) {
-		this._animFaceSide = 'left';
-		this._animFaceIndex = 0;
-		this._animFaceWait = 0;
-		this._afTick = 0;
+		this._afSide  = 'left';
+		this._afIndex = 0;
+		this._afWait  = 0;
+		this._afTick  = 0;
 		this.drawMessageFace();
-	} else if (this._animFaceWait > 0) {
-		this._animFaceWait--;
+	} else if (this._afWait > 0) {
+		this._afWait--;
 	} else {
 		this._afTick++;
-		if (this._afTick >= 6) {
+		if (this._afTick >= animTick) {
 			this._afTick = 0;
-			if (this._animFaceSide == 'left') {
-				this._animFaceIndex++;
-				if ((this._animFaceIndex >= this._afMaxFrames && !this._textState) || 
-				    (this._animFaceIndex >= this._afSpeakFrames && this._textState)) {
-					this._animFaceSide = 'right';
+			if (this._afSide == 'left') {
+				this._afIndex++;
+				if ((this._afIndex >= this._afMaxFrames && !this._textState) || 
+				    (this._afIndex >= this._afSpeakFrames && this._textState)) {
+					this._afSide = 'right';
 				}
 			} else {
-				this._animFaceIndex--;
-				if (this._animFaceIndex <= 0) {
-					this._animFaceSide = 'left';
+				this._afIndex--;
+				if (this._afIndex <= 0) {
+					this._afIndex = 0;
+					this._afSide = 'left';
 					if (this._afDelay[1] > 0 && (this._textState == null || this._afSpeakY < 0)) {
 						let min = Math.ceil(this._afDelay[0]);
 						let max = Math.floor(this._afDelay[1]);
-						this._animFaceWait = ~~(Math.random() * (max - min + 1) + min);
+						this._afWait = ~~(Math.random() * (max - min + 1) + min);
 					}
 				}
 			}
@@ -307,8 +389,8 @@ const windowMsg_start = Window_Message.prototype.startMessage;
 Window_Message.prototype.startMessage = function() {
 	windowMsg_start.call(this);
 	if ($gameMessage.animatedFace()) {
-		this._animFaceIndex = 0;
-		this._animFaceWait = 0;
+		this._afIndex = 0;
+		this._afWait = 0;
 		this._afIdleY = 0;
 		this._afSpeakY = 1;
 		this._afDelay[0] = $gameMessage._minAnimDelay;
@@ -321,9 +403,9 @@ Window_Message.prototype.startMessage = function() {
 // Alias - Animated faces update index by frame
 const windowMsg_drawMsgFace = Window_Message.prototype.drawMessageFace;
 Window_Message.prototype.drawMessageFace = function() {
-	if ($gameMessage.animatedFace()) {
+	if ($gameMessage.animatedFace()) {		
 		const faceName = $gameMessage.faceName();
-		$gameMessage.setFaceImage(faceName, this._animFaceIndex);
+		$gameMessage.setFaceImage(faceName, this._afIndex);
 	}
 	windowMsg_drawMsgFace.call(this);
 };
@@ -331,8 +413,7 @@ Window_Message.prototype.drawMessageFace = function() {
 // Alias - Animated faces get drawn specifically
 const windowBase_drawFace = Window_Base.prototype.drawFace;
 Window_Base.prototype.drawFace = function(faceName, faceIndex, x, y, width, height) {
-	let anim = $gameMessage.animatedFace();
-	if (anim) {
+	if ($gameMessage.animatedFace()) {
 		width = width || ImageManager.faceWidth;
 		height = height || ImageManager.faceHeight;
 		const bitmap = ImageManager.loadFace(faceName);
@@ -343,16 +424,17 @@ Window_Base.prototype.drawFace = function(faceName, faceIndex, x, y, width, heig
 		const dx = Math.floor(x + Math.max(width - pw, 0) / 2);
 		const dy = Math.floor(y + Math.max(height - ph, 0) / 2);
 		const sx = faceIndex * pw;
-		let sy;
-		if (this._afSpeakY >= 0 && this._textState) {
-			sy = ph * this._afSpeakY;
-		} else if (this._afIdleY >= 0 && !this._textState) {
-			sy = ph * this._afIdleY;
-		}
-		this.contents.clearRect(dx, dy, pw, ph);
-		this.contents.blt(bitmap, sx, sy, sw, sh, dx, dy);
+		const sy = this._afSpeakY >= 0 && this._textState
+			? ph * this._afSpeakY
+			: this._afIdleY >= 0 && !this._textState
+			? ph * this._afIdleY
+			: Math.floor(faceIndex / 4) * ph + (ph - sh) / 2; //default
+		bitmap.addLoadListener(() => {
+			this.contents.clearRect(dx, dy, pw, ph);
+			this.contents.blt(bitmap, sx, sy, sw, sh, dx, dy);			
+		});
 	} else {
-		windowBase_drawFace.call(this, faceName, faceIndex, x, y, width, height);
+		windowBase_drawFace.call(this, ...arguments);
 	}
 };
 
