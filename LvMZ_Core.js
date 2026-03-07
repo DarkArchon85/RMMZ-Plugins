@@ -6,9 +6,8 @@
 var Imported = Imported || {};
 Imported["LvMZ_Core"] = true;
 
-// ============================================================================
-//  List of public functions
-// ============================================================================
+//-----------------------------------------------------------------------------
+//  JsExtensions
 
 /**
  * Main namespace for LordValinar functions
@@ -19,7 +18,7 @@ Imported["LvMZ_Core"] = true;
  * Formats a string to have the first letter capitalized 
  *
  * @memberof LvCore
- * @param allWords {boolean} If you want all words in a string 
+ * @param {boolean} allWords - If you want all words in a string 
  *  to be capitalized or just the first word
  * @returns {string} A formatted string
  */
@@ -27,7 +26,20 @@ String.prototype.capFirst = function(allWords=false) {
 	if (allWords) {
 		let toSort = [];
 		for (const word of this.split(" ")) {
-			let text = word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+			let text = "";
+			if (word.match(/([\-_]+)/)) {
+				const symbol = RegExp.$1;
+				let subWords = [];
+				for (const subword of word.split(symbol)) {
+					text = subword.charAt(0).toUpperCase();
+					text += subword.slice(1).toLowerCase();
+					subWords.push(text);
+				}
+				text = subWords.join(symbol);
+			} else {
+				text = word.charAt(0).toUpperCase();
+				text += word.slice(1).toLowerCase();
+			}
 			toSort.push(text);
 		}
 		return toSort.join(" ");
@@ -36,13 +48,25 @@ String.prototype.capFirst = function(allWords=false) {
 };
 
 /**
+ * Catches any string numbers and converts to numerical data
+ *
+ * @param {number} min - Minimum number the value can't go below
+ * @param {number} max - Maximum number the value can't go above
+ * @returns {number} Clamped numerical value
+ */
+String.prototype.clamp = function(min, max) {
+	const value = isNaN(this) || this.length === 0 ? 0 : Number(this);
+	return value.clamp(min, max);
+};
+
+/**
  * Formats a percentile number to remove trails but two
  * You may define a custom min and max, otherwise the 
  *   default is -100% to 100% (min -1, max 1).
  *
  * @memberof LvCore
- * @param min {number} Minimum number to clamp for percentile
- * @param max {number} Maximum number to clamp for percentile
+ * @param {number} min - Minimum number to clamp for percentile
+ * @param {number} max - Maximum number to clamp for percentile
  * @returns {number} A formatted number
  */
 Number.prototype.percent = function(min = -1, max = 1) {
@@ -54,8 +78,8 @@ Number.prototype.percent = function(min = -1, max = 1) {
  *   by key and value.
  *
  * @memberof LvCore
- * @param key {string} object key to map
- * @param value {any} the value to match in the mapped array
+ * @param {string} key - object key to map
+ * @param {any} value - the value to match in the mapped array
  * @returns {number} Index of the array by key and value
  */
 Array.prototype.indexByKey = function(key, value) {
@@ -70,14 +94,12 @@ Object.defineProperty(Array.prototype, "indexByKey", {
  * Sorts an array with multiple columns
  *
  * @memberof LvCore
- * @param cA {number} Index of column A
- * @param cB {number} Index of column B
+ * @param {number} cA - Index of column A
+ * @param {number} cB - Index of column B
  * @returns {array} Sorted array by multiple columns
  */
 Array.prototype.sortByColumn = function(cA, cB) {
-	return this.sort((a,b) => {
-		return a[cA] === b[cA] ? a[cB] - b[cB] : a[cA] - b[cA];
-	});
+	return this.sort((a,b) => a[cA] === b[cA] ? a[cB] - b[cB] : a[cA] - b[cA]);
 };
 
 Object.defineProperty(Array.prototype, "sortByColumn", {
@@ -85,11 +107,33 @@ Object.defineProperty(Array.prototype, "sortByColumn", {
 });
 
 /**
+ *  Match two objects with possibly other object or array values
+ *
+ * @memberof LvCore
+ * @param {array|object} obj - The array or object to compare
+ * @returns {boolean} True if all values match 
+ */
+function matchObjects(source, obj) {
+	return Object.keys(source).every(key => {
+		if (!obj.hasOwnProperty(key)) return false;
+		const typeA = Object.prototype.toString.call(source[key]);
+		const typeB = Object.prototype.toString.call(obj[key]);
+		if (typeA !== typeB) return false;
+		if (source[key] instanceof Array) {
+			return source[key].matches(obj[key]);
+		} else if (typeA === "[object Object]") {
+			return matchObjects(source[key], obj[key]);
+		}
+		return obj[key] === source[key];		
+	});
+};
+
+/**
  * Matches keys and values of each element in an array
  *
  * @memberof LvCore
- * @param array {array} Second array to compare with
- * @returns {boolean} Whether the two arrays match or not
+ * @param {array} array - Second array to compare with
+ * @returns {boolean} Whether the two arrays match
  */
 Array.prototype.matches = function(array) {
 	if (!Array.isArray(array) || this.length !== array.length) return false;
@@ -97,8 +141,10 @@ Array.prototype.matches = function(array) {
 		const typeA = Object.prototype.toString.call(this[i]);
 		const typeB = Object.prototype.toString.call(array[i]);
 		if (typeA !== typeB) return false;
-		if (typeof this[i] === "object") {
-            if (!this[i].matches(array[i])) return false;
+		if (this[i] instanceof Array) {
+			if (!this[i].matches(array[i])) return false;
+		} else if (typeA === "[object Object]") {
+			if (!matchObjects(this[i], array[i])) return false;
 		} else if (this[i] !== array[i]) {
 			return false;
 		}
@@ -110,95 +156,132 @@ Object.defineProperty(Array.prototype, "matches", {
     enumerable: false
 });
 
-/**
- * Matches keys and values of each element in an object
- *
- * @memberof LvCore
- * @param obj {object} Second object to compare with
- * @returns {boolean} Whether the two objects match or not
- */
-Object.prototype.matches = function(obj) {
-	return Object.keys(this).every(key => {
-		return (typeof this[key] === "object" && typeof obj[key] === "object")
-			? this[key].matches(obj[key])
-			: this[key] === obj[key];
-	});
+//-----------------------------------------------------------------------------
+//  LvParams
+//
+// Main handler class for plugin settings
+
+function LvParams() {
+	this.initialize(...arguments);
+}
+
+LvParams.prototype.initialize = function(pluginName) {
+	this._data = PluginManager.parameters(pluginName);
 };
 
-/**
- * Merges numerical data by key between two objects
- *
- * @memberof LvCore
- * @param source {object} Source object
- * @param target {object} Target object to merge with Source
- * @returns {object} Combined Source object
- */
-function mergeData(source, target) {
-	for (const key in target) {
-		source[key] = source[key] || 0;
-		source[key] += target[key];
+LvParams.prototype.value = function(key) {
+	switch (arguments[1]) {
+		case 'arr':  return this._data[key].split(arguments[2] || ",");
+		case 'num':  return Number(this._data[key]);
+		case 'bool': return this._data[key].toLowerCase() === "true";
+		case 'eval': return this.eval(this._data[key]);
+		case 'jnum': return this.object(key).map(n => Number(n));
+		case 'json': return this.object(key).map(e => JSON.parse(e));
+		case 'strC': return this._data[key].capFirst(!!eval(arguments[2]));
+		case 'strL': return this._data[key].toLowerCase();
+		case 'strU': return this._data[key].toUpperCase();
+		case '%': 	 return this.percent(key, arguments[2], arguments[3]);
 	}
-	return source;
-}
+	return this._data[key];
+};
 
-/**
- * Searches for the common event Id based on name tag
- *
- * @memberof LvCore
- * @param nameTag {string} The name to search for (can use RegEx)
- * @return {number} ID of the common event or 0 if not found
- */
-function commonEventId(nameTag) {
-	const list = $dataCommonEvents.filter(e => !!e && e.name.length > 0);
-	for (const commonEvent of list) {
-		if (commonEvent.name.match(nameTag)) {
-			return commonEvent.id;
+LvParams.prototype.eval = function(text) {
+	if (text.match(/RANDOM[: ]+(\d+)[\-~, ](\d+)/gi)) {
+		return $gameTemp.random(RegExp.$1, RegExp.$2);
+	}
+	text = text.replace(/[\\]+/g, '');
+	text = text.replace(/([av])\[(\d+)\]/gi, (_, p1, p2) => {
+		switch (p1.toUpperCase()) {
+			case 'A': return "$gameParty.battleMembers()["+Number(p2-1)+"]";
+			case 'V': return "$gameVariables.value("+p2+")";
 		}
+	});
+	try {
+		const value = eval(text);
+		return isNaN(value) ? 0 : Math.max(value, 0);
+	} catch(e) {
+		console.log("---ERROR(LvParams.prototype.eval)---");
+		console.log("Eval: " + text);
+		return 0;
 	}
-	return 0;
-}
+};
 
-/**
- *  Retrieves database item by Type and ID
- *
- * @memberof LvCore
- * @param type {string} Item, Weapon, or Armor
- * @param id {number} Database ID of the object
- * @return {object} Database Object
- */
-function itemGroup(type, id) {
-	switch (type.toLowerCase()) {
-		case 'item': return $dataItems[id];
-		case 'weapon': return $dataWeapons[id];
-		case 'armor': return $dataArmors[id];
+LvParams.prototype.object = function(key) {
+	return JSON.parse(this._data[key]);
+};
+
+LvParams.prototype.percent = function(key, min = -1, max = 1) {
+	return (Number(this._data[key]) / 100).percent(Number(min), Number(max));
+};
+
+LvParams.prototype.parseSE = function(obj) {
+	return {
+		name:   obj.name || "",
+		pan:    Number(obj.pan || 0).clamp(-100, 100),
+		pitch:  Number(obj.pitch || 100).clamp(50, 150),
+		volume: Number(obj.volume || 90).clamp(0, 100)
+	};
+};
+
+LvParams.prototype.loadBGMData = function(key) {
+	return this.parseSE(this.object(key));
+};
+
+LvParams.prototype.loadSFXData = function(key) {
+	const obj = this.object(key);
+	const value = this.parseSE(obj);
+	if (obj.delay) {
+		value.delay = Math.max(0, Number(obj.delay));
+	}
+	return value;
+};
+
+LvParams.prototype.targetFromPos = function(x, y, create=false) {
+	const eventId = validEventId(x, y);
+	if ($gamePlayer.pos(x, y)) return $gamePlayer;
+	if (eventId > 0) return $gameMap.event(eventId);
+	if (Imported["LvMZ_CustomEvents"] && create) {
+		return $gameMap.blankEvent("CustomEvent", x, y);
 	}
 	return null;
-}
-
-/**
- * Retrieves an actor for event lists
- *
- * @memberof LvCore
- * @param index {number} Index of actor in party
- * @returns {object} Game_Actor
- */
-Game_Interpreter.prototype.actor = function(index=0) {
-	return $gameParty.battleMembers()[index];
 };
 
+LvParams.prototype.hex = function(key, alpha) {
+	const rgb = this._data[key];
+	let value = '#' + rgb.match(/[0-9]+/g).map((x) => {
+		return parseInt(x).toString(16).padZero(2)
+	}).join('');
+	if (alpha) {
+		alpha = alpha.clamp(0,1) * 255;
+		value += parseInt(alpha).toString(16);
+	}
+	return value;
+};
 
-// --- MAP MANAGER ---
+LvParams.prototype.rgb = function(key, alpha) {
+	const hex = this._data[key];
+	let r = parseInt(hex.slice(1, 3), 16),
+		g = parseInt(hex.slice(3, 5), 16),
+		b = parseInt(hex.slice(5, 7), 16);
+	return (alpha ? "rgba(" : "rgb(")+r+", "+g+", "+b
+		 + (alpha ? ", "+alpha+")" : ")");
+};
+
+//-----------------------------------------------------------------------------
+//  MapManager
+//
+// Main class that handles loading data from a map other than the current one
+
 function MapManager() {
 	throw new Error('This is a static class');
 }
 
 /**
- * Loads map data not on current $gameMap and then 
- *   executes a function based on this loaded data
+ * Loads another map's data and passes it to a callBack function
  *
  * @memberof LvCore
- * @param mapId {number} ID of the map to load
- * @param callBack {function} The callback function to load data with
+ * @param {number} mapId - ID of the map to load
+ * @param {function} callBack - The function ran with the data
  */
 MapManager.loadMapData = function(mapId, callBack) {
 	if (mapId > 0) {
@@ -248,26 +331,26 @@ MapManager.makeEmptyMap = function() {
  * Grabs the map event that is running
  *
  * @memberof LvCore
- * @return {function} The event running
+ * @returns {object} The event running
  */
 MapManager.event = function() {
-	const intr = $gameMap._interpreter;
-	if (!intr) {
+	if (!$gameMap.isEventRunning()) {
 		if ($gameTemp.isPlaytest()) {
 			alert("ERROR(MapManager): No event running!");
 		}
 		return null;
 	}
-	return $gameMap.event(intr._eventId);
+	const eventId = $gameMap._interpreter.eventId();
+	return $gameMap.event(eventId);
 };
 
 /**
- * Checks all directions
+ * Checks all directions for at least 1 passable
  *
  * @memberof LvCore
- * @param x {number} X position of tile
- * @param y {number} Y position of tile
- * @return {boolean} Returns true if at least 1 direction is valid
+ * @param {number} x - X position of tile
+ * @param {number} y - Y position of tile
+ * @returns {boolean} True if at least 1 direction is valid.
  */
 MapManager.isTilePassable = function(x, y) {
 	for (let i = 0; i < 4; i++) {
@@ -286,8 +369,8 @@ MapManager.isTilePassable = function(x, y) {
  * Returns an events array from another map
  *
  * @memberof LvCore
- * @param mapId {number} ID of the map object
- * @return {array} Map events both standard and custom
+ * @param {number} mapId - ID of the map object
+ * @returns {array} Array of the map's events using an internal event object
  */
 MapManager.simulateEvents = function(mapId) {
 	if ($gameMap.mapId() == mapId) return $gameMap.events();
@@ -300,245 +383,167 @@ MapManager.simulateEvents = function(mapId) {
 	return events;
 };
 
+//-----------------------------------------------------------------------------
+//  LvDebug
+//
+// Debugger for LvMZ plugins
 
-// --- PLUGIN MANAGER ---
-function LvParams() {
+function LvDebug() {
+	throw new Error('This is a static class');
+}
+
+LvDebug._timers = {};
+
+LvDebug.add = function(id, message, wait=60) {
+	if (!this._timers[id]) {
+		this._timers[id] = Math.max(wait, 0);
+		console.log(message);
+	}
+};
+
+LvDebug.clear = function() {
+	this._timers = {};
+};
+
+LvDebug.update = function() {
+	for (const id in this._timers) {
+		let wait = this._timers[id] || 0;
+		if (wait > 0) {
+			this._timers[id] -= 1;
+		} else {
+			delete this._timers[id];
+		}
+	}
+};
+
+//-----------------------------------------------------------------------------
+// LvMZ_RemoteEvent
+//
+// Used to create a Game_Event loading data from another map.
+
+function LvMZ_RemoteEvent() {
 	this.initialize(...arguments);
 }
 
-LvParams.prototype.initialize = function(pluginName) {
-	this._data = PluginManager.parameters(pluginName);
+LvMZ_RemoteEvent.prototype = Object.create(Game_Event.prototype);
+LvMZ_RemoteEvent.prototype.constructor = LvMZ_RemoteEvent;
+
+LvMZ_RemoteEvent.prototype.initialize = function(mapId, eventId) {
+	Game_Character.prototype.initialize.call(this);
+    this._mapId = mapId;
+    this._eventId = eventId;
+	this.locate(-1, -1);
+	this.refresh();
 };
 
-LvParams.prototype.value = function(key, type='') {
-	switch (type) {
-		case 'arr':  return this._data[key].split(",");
-		case 'bool': return this._data[key].toLowerCase() === "true";
-		case 'eval': return eval(this._data[key]);
-		case 'jnum': return JSON.parse(this._data[key]).map(e => Number(e));
-		case 'json': return JSON.parse(this._data[key]).map(e => JSON.parse(e));
-		case 'num':  return Number(this._data[key]);
-		case 'obj':  return JSON.parse(this._data[key]);
-		case 'strL': return this._data[key].toLowerCase();
-		case 'strU': return this._data[key].toUpperCase();
-		case '%':    return (Number(this._data[key])/100).percent();
+LvMZ_RemoteEvent.prototype.event = function() {
+	return DataManager.map(this._mapId).events[this._eventId];
+};
+
+LvMZ_RemoteEvent.prototype.refresh = function() {
+	this._pageIndex = this._erased ? -1 : this.findProperPageIndex();
+	if (this._pageIndex >= 0) {
+		this.setupRemoteEvent();
+	} else {
+		this.clearRemoteEvent();
 	}
-	return this._data[key];
 };
 
-LvParams.prototype.hex = function(rgb, alpha) {
-	let value = '#' + rgb.match(/[0-9]+/g).map((x) => {
-		return parseInt(x).toString(16).padZero(2)
-	}).join('');
-	if (alpha) {
-		alpha = alpha.clamp(0,1) * 255;
-		value += parseInt(alpha).toString(16);
+// -- Methods to be aliased, adding additional functionality
+LvMZ_RemoteEvent.prototype.setupRemoteEvent = function() {
+	this.initName();	
+};
+
+LvMZ_RemoteEvent.prototype.clearRemoteEvent = function() {
+	this.setName("");
+};
+
+//-----------------------------------------------------------------------------
+//  Public Functions
+
+/**
+ * Merges numerical data by key between two objects
+ *
+ * @memberof LvCore
+ * @param {object} source - Source object
+ * @param {object} target - Target object to merge with Source
+ * @returns {object} Combined Source object
+ */
+function mergeData(source, target) {
+	for (const key in target) {
+		source[key] = source[key] || 0;
+		source[key] += target[key];
 	}
-	return value;
-};
+	return source;
+}
 
-LvParams.prototype.rgb = function(key, alpha) {
-	let hex = this._data[key];
-	let r = parseInt(hex.slice(1, 3), 16),
-		g = parseInt(hex.slice(3, 5), 16),
-		b = parseInt(hex.slice(5, 7), 16);
-	return (alpha ? "rgba(" : "rgb(")+r+", "+g+", "+b
-		 + (alpha ? ", "+alpha+")" : ")");
-};
-
-LvParams.prototype.eval = function(text) {
-	if (text.match(/RANDOM[: ]+(\d+)[\-~, ](\d+)/gi)) {
-		const min = Math.ceil(Number(RegExp.$1));
-		const max = Math.floor(Number(RegExp.$2));
-		return ~~(Math.random() * (max - min + 1) + min);
-	}
-	text = text.replace(/[\\]*(A|V)\[(\d+)\]/gi, (_, p1, p2) => {
-		switch (p1.toUpperCase()) {
-			case 'A': return "$gameParty._actors["+Number(p2-1)+"]";
-			case 'V': return "$gameVariables.value("+p2+")";
+/**
+ * Searches for the common event Id based on name tag
+ *
+ * @memberof LvCore
+ * @param {string} nameTag - The name to search for (can use RegEx)
+ * @returns {number} ID of the common event or 0 if not found
+ */
+function commonEventId(nameTag) {
+	const list = $dataCommonEvents.filter(e => !!e && e.name.length > 0);
+	for (const commonEvent of list) {
+		if (commonEvent.name.match(nameTag)) {
+			return commonEvent.id;
 		}
-	});
-	try {
-		const value = eval(text);
-		return isNaN(value) ? 0 : Math.max(value, 0);
-	} catch(e) {
-		console.log("---ERROR(LvParams.prototype.eval)---");
-		console.log("Eval: " + text);
-		return 0;
 	}
-};
+	return 0;
+}
 
-LvParams.prototype.parseSE = function(obj) {
-	return obj ? {
-		name:   obj.name || "",
-		pan:    Number(obj.pan || 0).clamp(-100, 100),
-		pitch:  Number(obj.pitch || 100).clamp(50, 150),
-		volume: Number(obj.volume || 90).clamp(0, 100)
-	} : null;
-};
-
-LvParams.prototype.loadBGMData = function(key) {
-	const obj = JSON.parse(this._data[key]);
-	return this.parseSE(obj);
-};
-
-LvParams.prototype.loadSFXData = function(key, addDelay=false) {
-	const obj = JSON.parse(this._data[key]);
-	const value = this.parseSE(obj);
-	if (addDelay && obj.delay) {
-		value.delay = Math.max(0, Number(obj.delay));
+/**
+ *  Retrieves database item by Type and ID
+ *
+ * @memberof LvCore
+ * @param {string} type - Item, Weapon, or Armor
+ * @param {number} id - Database ID of the object
+ * @returns {object} Database Object
+ */
+function itemGroup(type, id) {
+	switch (type.toLowerCase()) {
+		case 'item': return $dataItems[id];
+		case 'weapon': return $dataWeapons[id];
+		case 'armor': return $dataArmors[id];
 	}
-	return value;
-};
+	return null;
+}
 
-LvParams.prototype.validEventId = function(x, y) {
+/**
+ * Check an object's note field for a specific regex 
+ *
+ * @memberof LvCore
+ * @param {object|function} object - The database object to check
+ * @param {string} noteTag - The note field to check regex for
+ * @returns {boolean} True if found, False if any error
+ */
+function checkTag(object, noteTag) {
+	if (!object) return false;
+	const data = (object.note || "").split(/[\r\n]+/);
+	for (const meta of data) {
+		if (meta.match(noteTag)) return true;
+	}
+	return false;
+}
+
+/**
+ * Checks the x,y map position for non-erased events
+ *
+ * @memberof LvCore
+ * @param {number} x - Map X coordinate
+ * @param {number} y - Map Y coordinate
+ * @returns {number} Event ID or 0 if error
+ */
+function validEventId(x, y) {
 	const list = $gameMap.eventsXy(x,y).filter(ev => !ev._erased);
 	return list.length > 0 ? list[0].eventId() : 0;
 };
 
-LvParams.prototype.targetFromPos = function(x, y, create=false) {
-	const eventId = this.validEventId(x, y);
-	if (eventId > 0) {
-		return $gameMap.event(eventId);
-	} else if ($gamePlayer.pos(x, y)) {
-		return $gamePlayer;
-	} else if (Imported["LvMZ_CustomEvents"] && create) {
-		const event = $gameMap.blankEvent("CustomEvent", x, y);
-		if (event) {
-			event._isCustom = true;
-			return event;
-		}
-	}
-	return null;
-};
-
-// --
-
-const Lv = new class {
-	constructor() {
-		this._debug = {};
-	}
-	
-	plugin(pluginName) {
-		pluginName = pluginName.replace(/LVMZ_/i, '');
-		if (!LvMZ[pluginName] && $gameTemp.isPlaytest()) {
-			alert("LvError("+pluginName+"): This plugin doesn't exist!");
-		}
-		return LvMZ[pluginName] || {
-			name: "Invalid Plugin",
-			desc: "This plugin doesn't exist",
-			version: 0
-		};
-	}
-	
-	loadDataFile(src, callBack, fileDir='data/') {
-		const xhr = new XMLHttpRequest();
-		const url = fileDir + src;
-		xhr.open('GET', url);
-		xhr.overrideMimeType('application/json');
-		xhr.onload = () => this.onXhrSuccessLoad(xhr, src, callBack);
-		xhr.onerror = () => this.onXhrErrorReturn(src);
-		xhr.send();
-	}
-	
-	onXhrSuccessLoad(xhr, src, callBack) {
-		if (xhr.status < 400) {
-			const result = JSON.parse(xhr.responseText);
-			callBack(result);
-		} else {
-			this.onXhrErrorReturn(src);
-		}
-	}
-	
-	onXhrErrorReturn(src) {
-		console.log("Failure to load file: " + src);
-	}
-	
-	saveDataFile(fileNameExt, object, fileDir='data/') {
-		const json = StoreManager.objectToJson(object);
-		const dirPath = this.filePath(fileDir);
-		const filePath = dirPath + fileNameExt;
-		const backupFilePath = filePath + "_";
-		return new Promise((resolve, reject) => {
-			StorageManager.fsMkdir(dirPath);
-			StorageManager.fsUnlink(backupFilePath);
-			StorageManager.fsRename(filePath, backupFilePath);
-			try {
-				StorageManager.fsWriteFile(filePath, json);
-				StorageManager.fsUnlink(backupFilePath);
-				resolve();
-			} catch (e) {
-				try {
-					StorageManager.fsUnlink(filePath);
-					StorageManager.fsRename(backupFilePath, filePath);
-				} catch (e2) {
-					//
-				}
-				reject(e);
-			}
-		});
-	}
-	
-	filePath(fileDir='data/') {
-		const path = require("path");
-		const base = path.dirname(process.mainModule.filename);
-		return path.join(base, fileDir);
-	}
-	
-	fileExists(fileNameExt, fileDir='data/') {
-		if (!fileNameExt) return false;
-		const dirPath = this.filePath(fileDir);
-		const file = dirPath + fileNameExt;
-		const fs = require("fs");
-		return fs.existsSync(file);
-	}
-
-	debug(id, text, wait=60) {
-		if (!this._debug[id]) {
-			this._debug[id] = Math.max(0, wait);
-			console.log(text);
-		}
-	}
-	
-	update() {
-		for (const id in this._debug) {
-			let wait = this._debug[id] || 0;
-			if (wait > 0) {
-				this._debug[id] -= 1;
-			} else {
-				delete this._debug[id];
-			}
-		}
-	}
-	
-	clearDebug() {
-		this._debug = {};
-	}
-	
-	checkTag(object, noteTag) {
-		if (!object) return false;
-		const data = (object.note || "").split(/[\r\n]+/);
-		for (const meta of data) {
-			if (meta.match(noteTag)) return true;
-		}
-		return false;
-	}
-	
-	checkComment(event, noteTag) {
-		if (!event || !event.page()) return false;
-		for (const command of event.list()) {
-			if (![108,408].contains(command.code)) continue;
-			const note = command.parameters[0];
-			if (note.match(noteTag)) return true;
-		}
-		return false;
-	}
-};
-
-//=============================================================================
 /*:
  * @target MZ
- * @plugindesc [v1.3] Core functionality and quality of life settings.
+ * @plugindesc [v1.5] Core functionality and quality of life settings.
  * @author LordValinar
  * @url https://github.com/DarkArchon85/RMMZ-Plugins
  *
@@ -563,7 +568,7 @@ const Lv = new class {
  * @type boolean
  * @on Debug Mode ON
  * @off Debug Mode OFF
- * @desc ON has map update automatically remove any Lv.debug() 
+ * @desc ON has map update automatically remove any LvDebug
  * commands used (stores debug info)
  * @default false
  *
@@ -674,7 +679,8 @@ const Lv = new class {
  * @param advisorName
  * @text Name of Advisor
  * @parent -- Advisor --
- * @default Shows in the name window. Leave blank to ignore.
+ * @desc Shows in the name window. Leave blank to ignore.
+ * NOTE > Text codes allowed
  * @default \\c[7][\\c[10]Advisor\\c[7]]
  * 
  * @param advisorFace
@@ -765,14 +771,14 @@ const Lv = new class {
  * @type number
  * @min 1
  * @max 999
- * @desc 
+ * @desc The Map ID of the event to modify.
  * @default 1
  *
  * @arg eventId 
  * @type number
  * @min 1
  * @max 999
- * @desc 
+ * @desc The ID of the event to modify.
  * @default 1
  *
  * @arg charId
@@ -781,12 +787,12 @@ const Lv = new class {
  * @option B
  * @option C
  * @option D
- * @desc 
+ * @desc The character used in the self switch key.
  * @default A
  * 
  * @arg value
  * @type boolean
- * @desc 
+ * @desc True to turn the self-switch ON, or False for OFF.
  * @default true
  *
  * @ --------------------------------------------------------------------------
@@ -800,7 +806,7 @@ const Lv = new class {
  * @type number
  * @min 1
  * @max 999
- * @desc 
+ * @desc The Map ID of all the events to modify.
  * @default 1
  *
  * @arg charId
@@ -809,12 +815,12 @@ const Lv = new class {
  * @option B
  * @option C
  * @option D
- * @desc 
+ * @desc The character used in the self switch key.
  * @default A
  * 
  * @arg value
  * @type boolean
- * @desc 
+ * @desc True to turn the self-switch ON, or False for OFF.
  * @default true
  *
  * @ --------------------------------------------------------------------------
@@ -840,7 +846,8 @@ const Lv = new class {
  *
  * This plugin is to help make my projects (and hopefully yours) easier with
  * quality of life functions. First we'll go over the settings and end with 
- * the available global functions.
+ * the available global functions. This plugin is always being updated, so
+ * check back with the latest versions!
  * 
  * ----------------------------------------------------------------------------
  * Instructions
@@ -851,18 +858,19 @@ const Lv = new class {
  * Starting Direction (default: Down): Which direction do you want the 
  * player character to start facing? Normally RPG Maker has you start
  * facing Down, but you might want the party leader facing East after
- * a cutscene?
+ * a intro cutscene?
  *
  * Debug Mode: Turned OFF by default, but if you want to use LvMZ_Core
  * for debugging messages in your own plugins, you can use the following
  * script call:
  *
- *  Lv.debug(id, text, wait);
+ *  LvDebug.add(id, message, wait);
  *   - ID: Any value really, unique to each debugging messages to prevent
  *         overlap and keep them organized.
- *   - Text: This is the console message you want displayed (F8)
+ *   - Message: This is the console message you want displayed (F8)
  *   - Wait: How many frames in delay before this debug command(by ID) can
  *         work again? Helpful in preventing spammed debugging in loops.
+ *         Default value if unused is 60 frames.
  *
  * Remove Title Screen: Turn this ON if you want to skip directly to 
  * Scene_Map (maybe using a map for title screen, or you want a title in 
@@ -875,18 +883,21 @@ const Lv = new class {
  *  <Immortal>  (notetag indicating they cannot die and will be put to 1hp)
  *  <Lives: #>  (notetag giving this actor a number of lives)
  *   - #(number): Number of lives available (on actor setup)
+ *   - Actors with 1+ lives will be put to 1hp and 1 life will be subtracted
  *
  * Manual Level Control: Turn this ON if you want to exceed the 99 level cap
  * and - or want to control the level cap dynamically. Leaving this OFF will
  * keep it at whatever level cap you set it in the Database.
  *
  * Auto Equip: For games where you want your character to always have 
- * -something- equipped, you can use this setting. Example games have the
- * actor wearing some form of underwear.
+ * -something- equipped, you can use this setting. Default settings expect
+ * that a [Body] type equipment (armor) will always be equipped. This will
+ * be ignored if you have no auto equip items obviously..
  *
- * Two Weapon Fighting State: This will require you to create a State that 
- * adds the Dual Wielder trait (slot type), and then put that State ID here.
- * What this does is allow the state to be added when wielding a single-
+ * Two Weapon Fighting & No Shield States: These will require you to create 
+ * two States - one to add the Dual Wielder trait (slot type) and one to
+ * add a Sealed Equip Slot(shield) trait, and then put those State IDs here.
+ * >> What this does is allow the state to be added when wielding a single-
  * handed weapon and no shield. If a two-handed weapon (notetags below) or 
  * shield is equipped, the state / dual wielder trait are removed.
  * Possible tags:
@@ -931,9 +942,18 @@ const Lv = new class {
  *   
  *   This function formats a string to have the first letter capitalized.
  *   - allWords: If TRUE, then it breaks down the string and capitalizes
- *               every word in that string.
+ *               every word in that string. Also breaks up words with 
+ *               special characters "-" or "_" (only 1 type per word).
  *   Example: "hello world".capFirst(true) => "Hello World"
  *   Example: "foget me not".capFirst() => "Forget me not"
+ *   Example: "Test-this_word".capFirst(true) => "Test-This_word"
+ *
+ *
+ * String.prototype.clamp = function(min, max) {};
+ *
+ *   This converts a string that is meant to be a number into such.
+ *   Not an essential function, but exists to catch such an error.
+ *   Example:  "15".clamp(0,100) => 15
  *
  *
  * Number.prototype.percent = function(min = -1, max = 1) {};
@@ -958,20 +978,20 @@ const Lv = new class {
  *   Example(LvMZ_Economy): shopGoods = shopGoods.sortByColumn(0,1);
  *
  *
+ * function matchObjects(source, obj) {};
+ *
+ *   Similar to the Array.prototype.matches function, this one has a better
+ *   search method for comparing two objects, but can also reference back to 
+ *   Array.prototype.matches when the values are arrays.
+ *
+ *
  * Array.prototype.matches = function(array) {};
  *
  *   A better search function to match up arrays with various data inside.
  *   An example could be an event's List (array with objects, arrays, and 
  *   numbers). Array.prototype.equals isn't enough to handle that kind of 
  *   search.
- *    - This function is in combinatin with Object.prototype.matches.
- *
- * 
- * Object.prototype.matches = function(obj) {};
- *
- *   Similar to the Array.prototype.matches function, this one has a better
- *   search method for comparing two objects, but can also reference back to 
- *   Array.prototype.matches when the values are arrays.
+ *    - This function is in combination with matchObjects()
  *
  *
  * function mergeData(source, target) {}
@@ -1000,14 +1020,6 @@ const Lv = new class {
  *   Eaxmple: invalid = itemGroup("Variable", 1);
  *
  *
- * Game_Interpreter.prototype.actor = function(index=0) {};
- *
- *   Script call used in the event editor to get party leader or other.
- *   Index refers to the position of the actor in the party list, like:
- *   0..3 - or higher if max party limit is greater than the default 4.
- *   Example: this.actor();  (party leader since index is 0 by default)
- *
- *
  * -- MAP MANAGER --
  *
  * This class is to help load and use data from a map that you are not on.
@@ -1029,12 +1041,16 @@ const Lv = new class {
  *
  * MapManager.event = function();
  *
- *   Retrieves the active event (call from the event manager).
+ *   Retrieves the active event. Usually called from within the event
+ *   manager, but can also be used in various plugins (like LvMZ_LootMenu)
+ *   to get Game_Event functions without having to remember the eventId.
  *
  *
  * MapManager.isTilePassable = function(x, y) {};
  *
  *   Checks the location tile if passable from at least ONE direction.
+ *   Similar to Game_CharacterBase.prototype.isMapPassable, only with 
+ *   no character objects to check with.
  *
  *
  * MapManager.simulateEvents = function(mapId) {};
@@ -1044,11 +1060,9 @@ const Lv = new class {
  *   when a Game_Event() object is created.
  *   - Compatible with my LvMZ_CustomEvents plugin!
  *   Example:
- *   const maps = $dataMapInfos
- *     .filter(obj => !!obj)
- *     .map(map => Number(map.id));
+ *   const maps = $dataMapInfos.filter(e => !!e).map(m => Number(m.id));
  *   for (const mapId of maps) {
- *     const list = DataManager.simulateEvents(mapId);
+ *     const list = MapManager.simulateEvents(mapId);
  *     for (const event of list) {
  *       console.log(event.name);
  *     }
@@ -1060,25 +1074,68 @@ const Lv = new class {
  * In short, this is the new plugin manager handler for cleaner code.
  * Example:
  * const pluginName = "LvMZ_Core";
- * const params = new LvParams(pluginName);
+ * const params     = new LvParams(pluginName);
  * const aValueHere = params.value("paramId","num");
  *
  * Note: I setup pluginName separately to also use in plugin commands
  * PluginManager.registerCommand(pluginName, 'commandName', args => {});
  *
- * LvParams.prototype.value = function(key, type='') {};
- *   Available Types:
+ * LvParams.prototype.value = function(...arguments) {};
+ *   Key (arguments[0]): plugin parameter id
+ *   Available Types (arguments[1]):
  *    - arr:  When the parameter is text split with ","
- *    - bool: When the parameter is a boolean type
+ *      NOTE: Can also use regex -> ex: /[A-Z]{2,}/i
+ *    - num:  When the parameter is a number
+ *    - bool: When the parameter is a boolean type ("true" | "false")
  *    - eval: When the parameter is javascript code
  *    - jnum: When the parameter is an array with numbers to parse
  *    - json: When the parameter is an array with objects to parse
- *    - num:  When the parameter is a number
- *    - obj:  When the parameter is an object to parse
- *    - strL: When the parameter is a string to lowercase all
- *    - strU: When the parameter is a string to capitalize all
+ *    - strC: When you combine the parameter with .capFirst()
+ *      NOTE: arguments[2] can be used as "true" or "false"
+ *    - strL: When the parameter is a string to convert to Lower Case
+ *    - strU: When the parameter is a string to convert to Upper Case
  *    - %:    When the parameter is a number with decimals
  *   default: Returns the parameter text unchanged
+ *
+ *
+ * LvParams.prototype.eval = function(text) {};
+ *
+ *   A useful function for taking a formula (text) and using certain tags
+ *   to get a specific numerical value quickly (minimum of 0).
+ *   Example Uses:
+ *     const params = new LvParams("LvMZ_Core");
+ *     const randomValue = params.eval("random: 1-100");
+ *     const variable = params.eval("v[5]");
+ *   Example (Using actor shorthand a[#]):
+ *     const leaderAtk = params.eval("a[1].atk");
+ *     >> This is because it returns $gameParty.battleMembers()[index]
+ *        "index" being 1-4 (1 = party leader, 2 = 2nd actor, etc)
+ *
+ *
+ * LvParams.prorotype.object = function(key) {};
+ *
+ *   Returns a parsed object ( JSON.parse(this._data[key] )
+ *   Useful for functions like loadBGMData or loadSFXData
+ *
+ *
+ * LvParams.prototype.loadBGMData = function(key) {};
+ * LvParams.prototype.loadSFXData = function(key) {};
+ *
+ *    These two functions are for parsing the object data into 
+ *    their respective BGM or SFX objects.
+ *
+ *
+ * LvParams.prototype.validEventId = function(x, y) {};
+ *
+ *   Retrieves list of events (if any) that have not been erased from that 
+ *   location (x,y). Gets the event with the lowest numerical ID first.
+ *
+ *
+ * LvParams.prototype.targetFromPos = function(x, y, create=false) {};
+ * 
+ *   Retrieves the player or event at the position. If LvMZ_CustomEvents 
+ *   is loaded, you can set "create" to TRUE and if nothing found at that 
+ *   location, it will create a blank event for you.
  *
  *
  * LvParams.prototype.hex = function(rgb, alpha) {};
@@ -1101,58 +1158,32 @@ const Lv = new class {
  *   Becomes: "rgba(0, 200, 0, 0.5)"
  *
  *
- * LvParams.prototype.eval = function(text) {};
+ * ===== LvDebug =====
  *
- *   A useful function for taking a formula (text) and using certain tags
- *   to get a specific numerical value quickly.
- *   Example Uses:
- *     const params = new LvParams("LvMZ_Core");
- *     const randomValue = params.eval("random: 1-100");
- *     const actorId = params.eval("\a[1]");
- *     const variable = params.eval("\v[5]");
- *     const other = params.eval("$gameActors.actor(\a[1]).atk + 10");
+ * Quite simply, you would use this if you want to debug your project,
+ * and it'll output a console message with a timer (as to prevent spamming
+ * the messages in any loops you might have used it in).
  *
+ * LvDebug.add = function(id, message, wait=60) {};
  *
- * LvParams.prototype.loadBGMData = function(key) {};
- * LvParams.prototype.loadSFXData = function(key, addDelay=false) {};
- *
- *    These two functions are plugin dependent, if you are loading any of 
- *    thsoe types of values. They parse the data into a nice Sound Effect
- *    object.
+ *   Displays <message> in the console window (F8) if the timer isn't
+ *   currently active. Default timer is 60 frames, so you don't have to 
+ *   input one if that is enough.
+ *  Examples: 
+ *   LvDebug.add("test", "Hello World");
+ *   LvDebug.add(0, "index can be anything really", 300);
  *
  *
- * LvParams.prototype.validEventId = function(x, y) {};
- *
- *   Retrieves list of events (if any) that have not been erased from that 
- *   location (x,y).
- *
- * LvParams.prototype.targetFromPos = function(x, y, create=false) {};
+ * LvDebug.clear = function() {};
  * 
- *   Retrieves the player or event at the position. If LvMZ_CustomEvents 
- *   is loaded, you can set "create" to TRUE and if nothing found at that 
- *   location, it will create a blank event for you.
+ *   Deletes all timers
  *
  *
- * ===== LV (class) =====
+ * LvDebug.update = function() {};
  *
- * This class is primarily for data handling such as loading plugin info,
- * loading, checking, or saving for data files (.json), and also has the 
- * debugging functions or checking an object/event's note tags and an 
- * event's comments for specific regular expressions.
- *
- * Going to just shorthand these notes on which ones are free to try
- * without much worry about breaking anything:
- *  - Lv.plugin(pluginName) = gets LV plugin info (name, desc, version)
- *  - Lv.debug(id, text, wait=60) = already went over this one
- *  - Lv.checkTag(object, noteTag) = RegExp check for database object
- *  - Lv.checkComment(event, noteTag) = RegExp check for events
- * 
- * These are JSON file handlers (load and run callBack function, or Save)
- *  - Lv.loadDataFile(src, callBack, fileDir='data/')
- *  - Lv.saveDataFile(fileNameExt, object, fileDir='data/')
- * 
- * Check if a file exists before doing something
- *  -  Lv.fileExists(fileNameExt, fileDir='data/')
+ *   A function that runs automatically on SceneManager, so you don't
+ *   need to do anything with this (unless it is to alias it in another
+ *   plugin).
  * 
  *
  * ===== LOCAL FUNCTIONS =====
@@ -1162,21 +1193,48 @@ const Lv = new class {
  *   Loads the preloaded map data within DataManager
  *
  *
+ * DataManager.saveDataFile = function(fileName, object) {};
+ *
+ *   Save an object (like a custom-made database object) as a JSON file.
+ *   - Will save the "fileName"(or whatever you name it) + ".json" to 
+ *     the 'data/' directory with all the other json files.
+ *
+ *
+ * DataManager.fileExists = function(fileName) {};
+ *
+ *   Checks to see if "fileName"(or whatever you name it) + ".json" in 
+ *   the 'data/' directory exists. Used in "if' statements.
+ *
+ *   - Example using the above method as well:
+ *   if (!DataManager.fileExists("MyDB")) {
+ *      DataManager.saveDataFile("MyDB", {"key":value});
+ *   }
+ *
+ *
  * Game_Temp.prototype.random = function(value1, value2) {};
  *
  *   Get a random number between the two values.
+ *   Example:
+ *     const value = $gameTemp.random(5,10);
+ *     $gameVariables.setValue(1, value);
  *
  *
  * Game_Message.prototype.joinString = function(text) {};
  *
- *   Combines a lowercase string with no spaces.
+ *   Combines a lowercase string with no spaces or return/new-lines.
+ *   Example:
+ *     console.log($gameMessage.joinString("My\rValue\nWut ?");
+ *     result = "myvaluewut?"
  *
  *
  * Game_Actors.prototype.clear = function(value) {};
  *
- *   Value(undefined): Clears all actor data
- *   Value(array): Removes actor data from a list
- *   Value(number): Removes a single actor data by ID
+ *   Generally wise not to touch this, but it is included for more
+ *   advanced users. Called like so:    $gameActors.clear();
+ *   Values/Examples (undefined, array, or number):
+ *     $gameActors.clear()      | Clears all actor data
+ *     $gameActors.clear([2,3]) | Removes actor data from a list
+ *     $gameActors.clear(4)     | Removes single actor by ActorID
  *
  *
  * Game_Player.prototype.frontX = function() {};
@@ -1190,6 +1248,15 @@ const Lv = new class {
  *   Can be used to activate another event (length) away. Similar to how
  *   counters still activate the shopkeeper behind them, you can use this
  *   to activate something all the way across the map!
+ *
+ *
+ * Game_Player.prototype.activateEventXy = function(x, y, normal=true) {};
+ *
+ *   Similar to $gamePlayer.extendActivate(), only this activates a 
+ *   specific event at the X/Y position (if applicable). This function 
+ *   can be useful for interacting with puzzles.
+ *   - normal: Checks if the valid event in question is Normal[1] priority
+ *     or not "false"(without quotes) = Below[0] or Above[2].
  *
  *
  * Game_Event.prototype.name = function() {};
@@ -1209,17 +1276,24 @@ const Lv = new class {
  *   and Event ID. Set pageIndex to true to get the pageIndex as well.
  *
  *
+ * Game_Interpreter.prototype.actor = function(index=0) {};
+ *
+ *   Script call used in the event editor to get party leader or other.
+ *   Index refers to the position of the actor in the party list, like:
+ *   0..3 - or higher if max party limit is greater than the default 4.
+ *   Example: this.actor();  (party leader since index is 0 by default)
+ *
+ *
  * ===== GLOBAL VARIABLES =====
  *
  * $advisor  (uses the Game_Advisor class)
- *  - setup(pluginName) = use IF calling new settings from another plugin
- *  - clear()           = wipe all advisor data (prep for manual settings?)
+ *  - clear() = wipe all advisor data (prep for manual settings?)
  *  - setName(name)
  *  - setFaceImage(name, index)
  *  - setBackground(background)
  *  - setPositionType(position)
  *  - setActive(bool)
- *  - speak(text)       = the MAIN function of this class
+ *  - speak(text) = the MAIN function of this class
  *
  * $gameSelfVar (uses the Game_SelfVariables class)
  *  - value(key)           = [mapId, eventId, type, variableId]
@@ -1243,13 +1317,17 @@ const Lv = new class {
  * Changelog
  * ----------------------------------------------------------------------------
  *
+ * v1.5 - Major fix needed (function preventing Graphics initialization),
+ *        plus added some new functions (ie $gamePlayer.activateEventXy)
+ *        and did some more code cleanup
+ * v1.4 - Few function fixes and change to the params.value() method
  * v1.3 - Moved simulateEvents for LvMZ_CustomEvents to its owner plugin
  * v1.2 - Fixed Two Handed functionality (seals the shield slot)
  * v1.1 - More name functionality for Game_Event, and misc. fixes.
  * v1.0 - Plugin complete!
  *
- * ----------------------------------------------------------------------------
  */
+// ============================================================================
 /*~struct~EquipItem:
  * @param actorId
  * @text Check Actor
@@ -1274,84 +1352,87 @@ const Lv = new class {
  * Returns weapon if type = 1, else returns armor
  * @default 1
  */
+// ============================================================================
 /*~struct~BGM:
  * @param name
  * @type file
  * @dir audio/bgm/
- * @desc 
+ * @desc The audio file (and path) to play
  * @default 
  *
  * @param pan
  * @type number
  * @min -100
  * @max 100
- * @desc 
+ * @desc More left side of ear (-value) or right(+value) or middle(0)
  * @default 0
  *
  * @param pitch
  * @type number
  * @min 50
  * @max 150
- * @desc 
+ * @desc Controls the audio pitch (100 being default in the middle)
  * @default 100
  *
  * @param volume
  * @type number
- * @desc 
+ * @desc Audio volume (default 90)
  * @default 90
  */
+// ============================================================================
 /*~struct~SFX:
  * @param name
  * @type file
  * @dir audio/bgm/
- * @desc 
+ * @desc The audio file (and path) to play
  * @default 
  *
  * @param pan
  * @type number
  * @min -100
  * @max 100
- * @desc 
+ * @desc More left side of ear (-value) or right(+value) or middle(0)
  * @default 0
  *
  * @param pitch
  * @type number
  * @min 50
  * @max 150
- * @desc 
+ * @desc Controls the audio pitch (100 being default in the middle)
  * @default 100
  *
  * @param volume
  * @type number
- * @desc 
+ * @desc Audio volume (default 90)
  * @default 90
  *
  * @param delay
  * @type number
  * @desc Delay (in frames) before running the sound again. Having a 
  * low delay may cause issues. Reminder: ~60 frames = 1 second.
- * @default 120
+ * @default 
  */
+// ============================================================================
 
 var LvMZ = {};
 LvMZ.Core = {
 	name: "LvMZ_Core",
 	desc: "Core functionality and quality of life settings.",
-	version: 1.3
+	version: 1.5
 };
 
-// -- Global Variables
+// -- Global Variables --
 var $advisor = null;
 var $gameSelfVar = null;
 
-// ============================================================================
+
 (() => {
 'use strict';
 
 const pluginName  = "LvMZ_Core";
 const params      = new LvParams(pluginName);
 const startDir    = params.value('startDir');
-const debug       = params.value('debugMode','bool');
+const debugMode   = params.value('debugMode','bool');
 const skipTitle   = params.value('removeTitle','bool');
 const permaDeath  = params.value('permaDeath','bool');
 const maxLvCtrl   = params.value('maxLevelControl','bool');
@@ -1367,7 +1448,7 @@ const useDirDelay = params.value('turnDelay','num');
 /******************************************************************************
 	plugin commands
 ******************************************************************************/
-//PluginManager.registerCommand(pluginName, '', args => {});
+
 PluginManager.registerCommand(pluginName, 'setLevel', args => {
 	const actor = $gameActors.actor(Number(args.actorId));
 	if (actor) actor.setMaxLevel(Number(args.value));
@@ -1405,21 +1486,19 @@ PluginManager.registerCommand(pluginName, 'setAdvisor', args => {
 ******************************************************************************/
 
 // --- DATA MANAGER -----------------------------------------------------------
-const dm_loadDB = DataManager.loadDatabase;
-DataManager.loadDatabase = function() {
-	dm_loadDB.call(this);
-	this._preloadedMaps = [];
-	const maps = $dataMapInfos.filter(obj => !!obj).map(map => Number(map.id));
-	for (const mapId of maps) {
-		MapManager.loadMapData(mapId, result => {
-			this._preloadedMaps[mapId] = result;
-		});
+const dm_databaseLoaded = DataManager.isDatabaseLoaded;
+DataManager.isDatabaseLoaded = function() {
+	const isLoaded = dm_databaseLoaded.call(this);
+	if (!isLoaded) return false;
+	if (!this._preloadedMaps) {
+		this.cacheMapData();
 	}
+	return true;
 };
 
 const dataManager_create = DataManager.createGameObjects;
 DataManager.createGameObjects = function() {
-	$advisor = new Game_Advisor(pluginName);
+	$advisor = new Game_Advisor();
 	$gameSelfVar = new Game_SelfVariables();
 	// --
 	dataManager_create.call(this);
@@ -1440,8 +1519,59 @@ DataManager.extractSaveContents = function(contents) {
 	$gameSelfVar = contents.selfvar;
 };
 
+// -- Map Management
+DataManager.cacheMapData = function() {
+	this._preloadedMaps = [];
+	const maps = $dataMapInfos.filter(obj => !!obj).map(map => Number(map.id));
+	for (const mapId of maps) {
+		MapManager.loadMapData(mapId, result => {
+			this._preloadedMaps[mapId] = result;
+		});
+	}
+};
+
 DataManager.map = function(mapId) {
 	return this._preloadedMaps[mapId] || MapManager.makeEmptyMap();
+};
+
+// -- File Management
+DataManager.fileDirectoryPath = function() {
+	const path = require("path");
+	const base = path.dirname(process.mainModule.filename);
+	return path.join(base, "data/");
+};
+
+DataManager.saveDataFile = function(fileName, object) {
+	const json = StoreManager.objectToJson(object);
+	const dirPath = this.fileDirectoryPath();
+	const filePath = dirPath + fileName + ".json";
+	const backupFilePath = filePath + "_";
+	return new Promise((resolve, reject) => {
+		StorageManager.fsMkdir(dirPath);
+		StorageManager.fsUnlink(backupFilePath);
+		StorageManager.fsRename(filePath, backupFilePath);
+		try {
+			StorageManager.fsWriteFile(filePath, json);
+			StorageManager.fsUnlink(backupFilePath);
+			resolve();
+		} catch (e) {
+			try {
+				StorageManager.fsUnlink(filePath);
+				StorageManager.fsRename(backupFilePath, filePath);
+			} catch (e2) {
+				//
+			}
+			reject(e);
+		}
+	});
+};
+
+DataManager.fileExists = function(fileName) {
+	if (!fileName) return false;
+	const dirPath = this.fileDirectoryPath();
+	const file = dirPath + fileName + ".json";
+	const fs = require("fs");
+	return fs.existsSync(file);
 };
 
 
@@ -1466,8 +1596,8 @@ BattleManager.checkPermaDeath = function() {
 		// Immortals revive automatically
 		if (actor.meta.Immortal) { battler.setHp(1); continue; }
 		// Number of Lives before truly dead
-		if (actor._numOfLives > 0) {
-			actor._numOfLives--;
+		if (actor._lives > 0) {
+			actor._lives--;
 			battler.setHp(1); // revive
 			continue;
 		}
@@ -1481,7 +1611,7 @@ BattleManager.checkPermaDeath = function() {
 const sm_updateMain = SceneManager.updateMain;
 SceneManager.updateMain = function() {
 	sm_updateMain.call(this);
-	if (debug) Lv.update();
+	if (debugMode) LvDebug.update();
 };
 
 /******************************************************************************
@@ -1596,11 +1726,12 @@ Game_Actors.prototype.clear = function(value) {
 const gameActor_setup = Game_Actor.prototype.setup;
 Game_Actor.prototype.setup = function(actorId) {
 	gameActor_setup.call(this, actorId);
-	if (Lv.checkTag(this.actor(), /<LIVES[: ]+(\d+)>/i;)) {
-		this._numOfLives = Math.max(0, Number(RegExp.$1));
+	if (checkTag(this.actor(), /<LIVES[: ]+(\d+)>/i)) {
+		this._lives = Math.max(0, Number(RegExp.$1));
 	} else {
-		this._numOfLives = 0;
+		this._lives = 0;
 	}
+	this._maxLevel = maxLvCtrl ? levelCap : undefined;
 };
 
 const gameActor_changeEquip = Game_Actor.prototype.changeEquip;
@@ -1610,7 +1741,7 @@ Game_Actor.prototype.changeEquip = function(slotId, item) {
 	const autoItem = this.autoEquipItem(etypeId);
 	gameActor_changeEquip.call(this, slotId, item);
 	if (dualWield > 0 && noShield > 0 && etypeId === 1) {
-		this.twoHandedCheck(oldItem, slotId, item);
+		this.twoHandedCheck(item);
 	}
 	if (oldItem && autoItem) {
 		if (!this.equips()[slotId]) { // unequip
@@ -1622,16 +1753,8 @@ Game_Actor.prototype.changeEquip = function(slotId, item) {
 	}
 };
 
-Game_Actor.prototype.twoHandedCheck = function(oldItem, slotId, newItem) {
-	if (!this.equips()[slotId] && this.weapon2H(oldItem)) {
-		// Unequip - Unlock shield slot 
-		this.removeState(noShield);
-		// Dual Wielder - re-add the state
-		if (!!this._dualWielder) {
-			this._dualWielder = false;
-			this.addState(dualWield);
-		}
-	} else if (this.weapon2H(newItem)) {
+Game_Actor.prototype.twoHandedCheck = function(newItem) {
+	if (this.weapon2H(newItem)) {
 		// Two Handed Weapons: If a 2h weapon is equipped, 
 		// we remove Dual Wielder and lock shield slot (if applicable)
 		if (this.isStateAffected(dualWield)) {
@@ -1644,7 +1767,7 @@ Game_Actor.prototype.twoHandedCheck = function(oldItem, slotId, newItem) {
 	} else {
 		// Remove the shield seal state (if applicable)
 		this.removeState(noShield);
-		// If equipping a normal weapon, we can re-add the state|trait
+		// - All other cases, restore dual wielder (if applicable)
 		if (!!this._dualWielder) {
 			this._dualWielder = false;
 			this.addState(dualWield);
@@ -1653,7 +1776,7 @@ Game_Actor.prototype.twoHandedCheck = function(oldItem, slotId, newItem) {
 };
 
 Game_Actor.prototype.weapon2H = function(item) {
-	return Lv.checkTag(item, /<TWO[\-_ ]*HANDED>/i);
+	return checkTag(item, /<TWO[\-_ ]*HANDED>/gi);
 };
 
 Game_Actor.prototype.autoEquipItem = function(etypeId) {
@@ -1668,13 +1791,6 @@ Game_Actor.prototype.autoEquipItem = function(etypeId) {
 
 // ===========================================================================
 //  * Max Level Control 
-
-// Alias - Add on our data to the default setup
-const gameActor_setup = Game_Actor.prototype.setup;
-Game_Actor.prototype.setup = function(actorId) {
-	gameActor_setup.call(this, actorId);
-	this._maxLevel = maxLvCtrl ? levelCap : undefined;
-};
 
 // Alias - 
 const gameActor_maxLevel = Game_Actor.prototype.maxLevel;
@@ -1704,7 +1820,7 @@ Game_Party.prototype.maxBattleMembers = function() {
 Game_Party.prototype.setPartyLimit = function(value) {
 	this._partySizeLimit = (partyLimit && !Imported['VisuMZ_2_PartySystem']) ? value : 0;
 };
-
+// --
 const gameParty_highestLevel = Game_Party.prototype.highestLevel;
 Game_Party.prototype.highestLevel = function(allMembers = true) {
 	if (allMembers) return gameParty_highestLevel.call(this);
@@ -1799,6 +1915,12 @@ Game_Player.prototype.extendActivate = function(length = 1) {
 	}
 };
 
+Game_Player.prototype.activateEventXy = function(x, y, normal = true) {
+	if (this.canStartLocalEvents()) {
+		this.startMapEvent(x, y, [0,1,2], normal);
+	}
+};
+
 
 // --- GAME EVENT -------------------------------------------------------------
 const gameEv_initMembers = Game_Event.prototype.initMembers;
@@ -1821,9 +1943,7 @@ Game_Event.prototype.setupPageSettings = function() {
 
 Game_Event.prototype.initName = function() {
 	const nameTag = /<NAME[: ]+([^>]+)>/i;
-	if (Lv.checkTag(this.event(), nameTag)) {
-		this.setName(RegExp.$1);
-	} else if (Lv.checkComment(this, nameTag)) {
+	if (checkTag(this.event(), nameTag) || this.checkComment(nameTag)) {
 		this.setName(RegExp.$1);
 	} else {
 		this.setName(this.event().name);
@@ -1843,6 +1963,16 @@ Game_Event.prototype.objectId = function(pageIndex=false) {
 	if (pageIndex) value.push(this._pageIndex);
 	return value;
 };
+
+Game_Event.prototype.checkComment = function(noteTag, page) {
+	const list = page ? page.list : this.list();
+	for (const command of list) {
+		if (![108,408].contains(command.code)) continue;
+		const note = command.parameters[0];
+		if (note.match(noteTag)) return true;
+	}
+	return false;
+}
 
 
 // --- GAME INTERPRETER -------------------------------------------------------
@@ -1867,6 +1997,156 @@ Game_Interpreter.prototype.command354 = function() {
 		return true;
 	}
 	return gameIntr_command354.call(this);
+};
+
+// Quick script call to get a party member
+Game_Interpreter.prototype.actor = function(index=0) {
+	return $gameParty.battleMembers()[index];
+};
+
+
+// --- GAME ADVISOR -----------------------------------------------------------
+function Game_Advisor() {
+	this.initialize(...arguments);
+}
+
+Object.defineProperties(Game_Advisor.prototype, {
+	name: {
+		get: function() {
+			return this._speakerName;
+		}, configurable: true
+	},
+	face: {
+		get: function() {
+			return this._faceName;
+		}, configurable: true
+	},
+	index: {
+		get: function() {
+			return this._faceIndex;
+		}, configurable: true
+	},
+	bg: {
+		get: function() {
+			return this._background;
+		}, configurable: true
+	},
+	pos: {
+		get: function() {
+			return this._positionType;
+		}, configurable: true
+	},
+	on: {
+		get: function() {
+			return this._active;
+		}, configurable: true
+	}
+});
+
+Game_Advisor.prototype.initialize = function() {
+	this._speakerName  = params.value('advisorName');
+	this._faceName     = params.value('advisorFace');
+	this._faceIndex    = params.value('advisorIndex','num');
+	this._background   = params.value('msgBg','num');
+	this._positionType = params.value('msgPos','num');
+	this._active       = params.value('useAdvisor','bool');
+};
+
+Game_Advisor.prototype.clear = function() {
+	this._speakerName  = "";
+	this._faceName     = "";
+	this._faceIndex    = 0;
+	this._background   = 0;
+	this._positionType = 2;
+	this._active       = false;
+};
+
+Game_Advisor.prototype.setName = function(name) {
+	this._speakerName = name;
+};
+
+Game_Advisor.prototype.setFaceImage = function(name, index) {
+	this._faceName = name;
+	this._faceIndex = index;
+};
+
+Game_Advisor.prototype.setBackground = function(background) {
+	this._background = background;
+};
+
+Game_Advisor.prototype.setPositionType = function(position) {
+	this._positionType = position;
+};
+
+Game_Advisor.prototype.setActive = function(value) {
+	this._active = value;
+};
+
+// TODO(before or by v2.0): Make as a "gab" window than Game_Message
+Game_Advisor.prototype.speak = function(text) {
+	if (!this._active) return;
+	$gameMessage.newPage();
+	$gameMessage.setSpeakerName(this._speakerName);
+	$gameMessage.setFaceImage(this._faceName, this._faceIndex);
+	$gameMessage.setBackground(this._background);
+	$gameMessage.setPositionType(this._positionType);
+	$gameMessage.add(text);
+};
+
+
+// --- GAME SELF_VARIABLE -----------------------------------------------------
+function Game_SelfVariables() {
+	this.initialize(...arguments);
+}
+
+Game_SelfVariables.prototype.initialize = function() {
+    this.clear();
+};
+
+Game_SelfVariables.prototype.clear = function() {
+    this._data = {};
+};
+
+Game_SelfVariables.prototype.value = function(key) {
+	// - We really just need a length of 3 (to get the TYPE)
+	// - Example: [mapId, eventId, "SelfVar", variableId]
+	// - variableId makes the Key more unique (but optional)
+	const type = (key[2] || "").toLowerCase();
+	switch (type) {
+		case "selfvar":    return this._data[key] || 0;
+		case "selfswitch": return !!this._data[key];
+	}
+	return null;
+};
+
+Game_SelfVariables.prototype.setValue = function(key, value) {
+	if (typeof key === "string") key = key.split(","); // failsafe
+	if (!Array.isArray(key) || key.length < 3) return;
+	switch (key[2].toLowerCase()) {
+		case "selfvar":
+			if (typeof value === "number") {
+				value = Math.floor(value);
+			}
+			this._data[key] = value;
+			break;
+		case "selfswitch":
+			if (value) {
+				this._data[key] = true;
+			} else {
+				delete this._data[key];
+			}
+			break;
+    }
+	this.onChange();
+};
+
+Game_SelfVariables.prototype.removeValue = function(key) {
+	delete this._data[key];
+	this.onChange();
+};
+
+Game_SelfVariables.prototype.onChange = function() {
+	$gameMap.requestRefresh();
 };
 
 /******************************************************************************
@@ -1925,192 +2205,3 @@ Scene_Gameover.prototype.gotoTitle = function() {
 };
 
 })();
-
-/******************************************************************************
-	Custom-Public Classes
-******************************************************************************/
-
-//-----------------------------------------------------------------------------
-// LvMZ_RemoteEvent
-//
-// Used to create a Game_Event loading data from another map.
-
-function LvMZ_RemoteEvent() {
-	this.initialize(...arguments);
-}
-
-LvMZ_RemoteEvent.prototype = Object.create(Game_Event.prototype);
-LvMZ_RemoteEvent.prototype.constructor = LvMZ_RemoteEvent;
-
-LvMZ_RemoteEvent.prototype.initialize = function(mapId, eventId) {
-	Game_Character.prototype.initialize.call(this);
-    this._mapId = mapId;
-    this._eventId = eventId;
-	this.locate(-1, -1);
-	this.refresh();
-};
-
-LvMZ_RemoteEvent.prototype.event = function() {
-	return DataManager.map(this._mapId).events[this._eventId];
-};
-
-LvMZ_RemoteEvent.prototype.refresh = function() {
-	this._pageIndex = this._erased ? -1 : this.findProperPageIndex();
-	if (this._pageIndex >= 0) {
-		this.initName();
-	} else {
-		this.setName("");
-	}
-};
-
-
-// --- GAME ADVISOR -----------------------------------------------------------
-function Game_Advisor() {
-	this.initialize(...arguments);
-}
-
-Object.defineProperties(Game_Advisor.prototype, {
-	name: {
-		get: function() {
-			return this._speakerName;
-		}, configurable: true
-	},
-	face: {
-		get: function() {
-			return this._faceName;
-		}, configurable: true
-	},
-	index: {
-		get: function() {
-			return this._faceIndex;
-		}, configurable: true
-	},
-	bg: {
-		get: function() {
-			return this._background;
-		}, configurable: true
-	},
-	pos: {
-		get: function() {
-			return this._positionType;
-		}, configurable: true
-	},
-	active: {
-		get: function() {
-			return this._active;
-		}, configurable: true
-	}
-});
-
-Game_Advisor.prototype.initialize = function(pluginName) {
-	if (pluginName) {
-		this.setup(pluginName);
-	} else {
-		this.clear();
-	}
-};
-
-Game_Advisor.prototype.clear = function() {
-	this._speakerName  = "";
-	this._faceName     = "";
-	this._faceIndex    = 0;
-	this._background   = 0;
-	this._positionType = 2;
-	this._active       = false;
-};
-
-Game_Advisor.prototype.setup = function(pluginName) {
-	const params       = new LvParams(pluginName);
-	this._speakerName  = params.value('advisorName');
-	this._faceName     = params.value('advisorFace');
-	this._faceIndex    = params.value('advisorIndex','num');
-	this._background   = params.value('msgBg','num');
-	this._positionType = params.value('msgPos','num');
-	this._active       = params.value('useAdvisor','bool');
-};
-
-Game_Advisor.prototype.setName = function(name) {
-	this._speakerName = name;
-};
-
-Game_Advisor.prototype.setFaceImage = function(name, index) {
-	this._faceName = name;
-	this._faceIndex = index;
-};
-
-Game_Advisor.prototype.setBackground = function(background) {
-	this._background = background;
-};
-
-Game_Advisor.prototype.setPositionType = function(position) {
-	this._positionType = position;
-};
-
-Game_Advisor.prototype.setActive = function(value) {
-	this._active = Boolean(value);
-};
-
-Game_Advisor.prototype.speak = function(text) {
-	if (!this._active) return;
-	$gameMessage.newPage();
-	$gameMessage.setSpeakerName(this._speakerName);
-	$gameMessage.setFaceImage(this._faceName, this._faceIndex);
-	$gameMessage.setBackground(this._background);
-	$gameMessage.setPositionType(this._positionType);
-	$gameMessage.add(text);
-};
-
-
-// --- GAME SELF_VARIABLE -----------------------------------------------------
-function Game_SelfVariables() {
-	this.initialize(...arguments);
-}
-
-Game_SelfVariables.prototype.initialize = function() {
-    this.clear();
-};
-
-Game_SelfVariables.prototype.clear = function() {
-    this._data = {};
-};
-
-Game_SelfVariables.prototype.value = function(key) {
-	// - We really just need a length of 3 (to get the TYPE)
-	// - Example: [mapId, eventId, "SelfVar", variableId]
-	// - variableId makes the Key more unique (but optional)
-	const type = (key[2] || "").toLowerCase();
-	switch (type) {
-		case "selfvar":    return this._data[key] || 0;
-		case "selfswitch": return !!this._data[key];
-	}
-	return null;
-};
-
-Game_SelfVariables.prototype.setValue = function(key, value) {
-	if (typeof key === "string") key = key.split(","); // failsafe
-	if (!Array.isArray(key) || key.length < 3) return;
-	switch (key[2].toLowerCase()) {
-		case "selfvar":
-			if (typeof value === "number") {
-				value = Math.floor(value);
-			}
-			this._data[key] = value;
-			break;
-		case "selfswitch":
-			if (value) {
-				this._data[key] = true;
-			} else {
-				this.removeValue(key);
-			}
-			break;
-    }
-	this.onChange();
-};
-
-Game_SelfVariables.prototype.removeValue = function(key) {
-	delete this._data[key];
-};
-
-Game_SelfVariables.prototype.onChange = function() {
-	$gameMap.requestRefresh();
-};
