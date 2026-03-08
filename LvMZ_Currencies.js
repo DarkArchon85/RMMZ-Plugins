@@ -11,7 +11,7 @@ Imported["LvMZ_Currencies"] = true;
 
 /*:
  * @target MZ
- * @plugindesc [v1.2] Allows usage of multiple currencies as seen in both
+ * @plugindesc [v1.3] Allows usage of multiple currencies as seen in both
  * real life and in other RPGs! Dollars, Shillings, Gold, you name it!
  * @author LordValinar
  * @url https://github.com/DarkArchon85/RMMZ-Plugins
@@ -90,7 +90,8 @@ Imported["LvMZ_Currencies"] = true;
  * of Electrum). Now you can control your own currencies within your game 
  * world. Just follow the instructions below.
  *
- * This plugin is part of a set, but can be used independently.
+ * This plugin is part of a set, but can be used independently. Requires
+ * LvMZ_Core.js!
  *
  * == THE ECONOMICS TRINITY ==
  *  - LvMZ_Factions.js
@@ -226,6 +227,8 @@ Imported["LvMZ_Currencies"] = true;
  * Changelog
  * ----------------------------------------------------------------------------
  *
+ *  v1.3 - Updated compatibility for LvMZ_Core v1.5+
+ *
  *  v1.2 - Updated to new format plus minor fixes for demo; Can set or reset
  *         currency "sets" (like going from Euros to Dollars)
  *
@@ -242,7 +245,7 @@ var LvMZ = LvMZ || {};
 LvMZ.Currencies = {
 	name: "Alternate Currencies",
 	desc: "Buy or sell with items, weapons, armors, or variables!",
-	version: 1.2,
+	version: 1.3,
 	curMode: null
 };
 
@@ -324,12 +327,12 @@ DataManager.cacheDatabaseCurrencies = function() {
  *  transmigrating worlds, or enter different regions.
  *
  * @memberof LvCore
- * @param array {object} Array of items with the IDs and Prices
+ * @param {object} array - Items with the IDs and Prices
  */
 DataManager.setCurrencySet = function(array) {
 	const newData = {};
 	for (const item of array.filter(obj => !!obj)) {
-		if (Lv.checkTag(item, /<CURRENCY>/i)) {
+		if (checkTag(item, /<CURRENCY>/i)) {
 			newData[item.id] = item.price;
 		}
 	}
@@ -342,12 +345,13 @@ DataManager.setCurrencySet = function(array) {
  * Logs any "alternate currencies" (ignores item price)
  *
  * @memberof LvCore
+ * @param {object} group - Database json with item/equip objects
  */
 DataManager.cacheMeta = function(group) {
 	const tagID = /<ALTCURRENCY:\s(VAR||ITEM||WEAPON||ARMOR)\s(\d+)\s(BUY||SELL)\s(\d+)>/i;
 	const tagNAME = /<ALTCURRENCY:\s(ITEM||WEAPON||ARMOR)\s(.*)\s(BUY||SELL)\s(\d+)>/i;
 	let type, id, mode, price;
-	for (const item of group.filter(e => !!e)) {
+	for (const item of group.filter(obj => !!obj)) {
 		const data = (item.note || "").split(/[\r\n]+/);
 		for (const meta of data) {
 			if (meta.match(tagID)) {
@@ -379,7 +383,7 @@ DataManager.cacheMeta = function(group) {
  *  Retrieves the currency ITEMS from the databse by ID
  *
  * @memberof LvCore
- * @return {object} Array of databse items
+ * @returns {object} Array of databse items
  */
 DataManager.currencies = function() {
 	return Object.keys(this._currencies).map(id => $dataItems[id]);
@@ -882,7 +886,7 @@ Window_Base.prototype.drawCurrencies = function(value, rect, showAll=false) {
 
 Window_Base.prototype.isSelling = function() {
 	const scene = SceneManager._scene;
-	return scene.constructor === Scene_Shop ? scene.isSelling() : false;
+	return scene instanceof Scene_Shop ? scene.isSelling() : false;
 };
 
 
@@ -892,7 +896,7 @@ if (!Imported['LvMZ_Economy']) {
 	Window_Selectable.prototype.select = function(index) {
 		winSel_select.call(this, index);
 		const scene = SceneManager._scene;
-		if (scene.constructor === Scene_Shop) {
+		if (scene instanceof Scene_Shop) {
 			const num = scene._numberWindow ? scene._numberWindow.active : false;
 			if (num) scene._goldWindow.numWindowRefresh();
 		}
@@ -1133,6 +1137,7 @@ Window_ShopSell.prototype.isEnabled = function(item) {
 		price = convertPrice(price, item);
 		return this.shop()._money >= price;
 	}
+	// Alternate Currencies Check
 	const groups = ['Var','Item','Weapon','Armor'];
 	let unit, value, price;
 	for (const type of groups) {
@@ -1336,8 +1341,7 @@ function itemType(item) {
 // compares it with any notetags (ex: <Unit:#>) and then returns 
 // it in a base number format (lowest currency)
 function convertPrice(price, item) {
-	const cache = DataManager.currencies();
-	if (cache.length > 0) {
+	if (DataManager.currencies().length > 0) {
 		const params = new LvParams('LvMZ_Currencies');
 		const defUnit = params.value('defUnit','num');
 		const unitId = item && item.meta.Unit ? Number(item.meta.Unit) : defUnit;
@@ -1352,7 +1356,7 @@ function convertPrice(price, item) {
 function convertBase(baseNumber) {
 	const cache = DataManager.currencies();
 	if (cache.length === 0) return [baseNumber];
-	let list = [];
+	const list = [];
 	for (const item of cache) {
 		if (baseNumber <= 0) { list.push(0); continue; }
 		let rate = item.price;
