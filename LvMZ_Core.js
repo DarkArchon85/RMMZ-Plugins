@@ -113,7 +113,7 @@ Object.defineProperty(Array.prototype, "sortByColumn", {
  * @param {array|object} obj - The array or object to compare
  * @returns {boolean} True if all values match 
  */
-function matchObjects(source, obj) {
+function objectsMatch(source, obj) {
 	return Object.keys(source).every(key => {
 		if (!obj.hasOwnProperty(key)) return false;
 		const typeA = Object.prototype.toString.call(source[key]);
@@ -122,9 +122,9 @@ function matchObjects(source, obj) {
 		if (source[key] instanceof Array) {
 			return source[key].matches(obj[key]);
 		} else if (typeA === "[object Object]") {
-			return matchObjects(source[key], obj[key]);
+			return objectsMatch(source[key], obj[key]);
 		}
-		return obj[key] === source[key];		
+		return source[key] === obj[key];		
 	});
 };
 
@@ -133,7 +133,7 @@ function matchObjects(source, obj) {
  *
  * @memberof LvCore
  * @param {array} array - Second array to compare with
- * @returns {boolean} Whether the two arrays match
+ * @returns {boolean} True if the two arrays match
  */
 Array.prototype.matches = function(array) {
 	if (!Array.isArray(array) || this.length !== array.length) return false;
@@ -144,7 +144,7 @@ Array.prototype.matches = function(array) {
 		if (this[i] instanceof Array) {
 			if (!this[i].matches(array[i])) return false;
 		} else if (typeA === "[object Object]") {
-			if (!matchObjects(this[i], array[i])) return false;
+			if (!objectsMatch(this[i], array[i])) return false;
 		} else if (this[i] !== array[i]) {
 			return false;
 		}
@@ -187,7 +187,9 @@ LvParams.prototype.value = function(key) {
 
 LvParams.prototype.eval = function(text) {
 	if (text.match(/RANDOM[: ]+(\d+)[\-~, ](\d+)/gi)) {
-		return $gameTemp.random(RegExp.$1, RegExp.$2);
+		const min = Math.ceil(Number(RegExp.$1));
+		const max = Math.floor(Number(RegExp.$2));
+		return ~~(Math.random() * (max - min + 1) + min);
 	}
 	text = text.replace(/[\\]+/g, '');
 	text = text.replace(/([av])\[(\d+)\]/gi, (_, p1, p2) => {
@@ -460,6 +462,20 @@ LvMZ_RemoteEvent.prototype.clearRemoteEvent = function() {
 
 //-----------------------------------------------------------------------------
 //  Public Functions
+
+/**
+ * Checks if a file name plus extension exists in a directory
+ *
+ * @memberof LvCore
+ * @param {string} fileNameExt - File name including extension
+ * @param {string} fileDir - Directory to look (defaults to data/)
+ * @returns {boolean} True if the file is found
+ */
+function fileExists(fileNameExt, fileDir="data/") {
+	if (!fileNameExt) return false;
+	const fs = require("fs");
+	return fs.existsSync(fileDir + fileNameExt);
+};
 
 /**
  * Merges numerical data by key between two objects
@@ -978,7 +994,7 @@ function validEventId(x, y) {
  *   Example(LvMZ_Economy): shopGoods = shopGoods.sortByColumn(0,1);
  *
  *
- * function matchObjects(source, obj) {};
+ * function objectsMatch(source, obj) {};
  *
  *   Similar to the Array.prototype.matches function, this one has a better
  *   search method for comparing two objects, but can also reference back to 
@@ -991,7 +1007,19 @@ function validEventId(x, y) {
  *   An example could be an event's List (array with objects, arrays, and 
  *   numbers). Array.prototype.equals isn't enough to handle that kind of 
  *   search.
- *    - This function is in combination with matchObjects()
+ *    - This function is in combination with objectsMatch()
+ *
+ *
+ * function fileExists(fileNameExt, fileDir="data/") {};
+ *
+ *   Checks to see if "fileName"(or whatever you name it) in 
+ *   the file directory ('data/' by default) exists. Used in 
+ *   "if' statements.
+ *
+ *   - Example using the above method as well:
+ *   if (!fileExists("MyDB.json")) {
+ *      DataManager.saveDataFile("MyDB", {"key":value});
+ *   }
  *
  *
  * function mergeData(source, target) {}
@@ -1018,6 +1046,12 @@ function validEventId(x, y) {
  *   This function gets your database object based on TYPE and ID
  *   Example: item = itemGroup("Item", 5);
  *   Eaxmple: invalid = itemGroup("Variable", 1);
+ *
+ *
+ * function validEventId(x, y) {};
+ *
+ *   Retrieves list of events (if any) that have not been erased from that 
+ *   location (x,y). Gets the event with the lowest numerical ID first.
  *
  *
  * -- MAP MANAGER --
@@ -1125,12 +1159,6 @@ function validEventId(x, y) {
  *    their respective BGM or SFX objects.
  *
  *
- * LvParams.prototype.validEventId = function(x, y) {};
- *
- *   Retrieves list of events (if any) that have not been erased from that 
- *   location (x,y). Gets the event with the lowest numerical ID first.
- *
- *
  * LvParams.prototype.targetFromPos = function(x, y, create=false) {};
  * 
  *   Retrieves the player or event at the position. If LvMZ_CustomEvents 
@@ -1198,17 +1226,6 @@ function validEventId(x, y) {
  *   Save an object (like a custom-made database object) as a JSON file.
  *   - Will save the "fileName"(or whatever you name it) + ".json" to 
  *     the 'data/' directory with all the other json files.
- *
- *
- * DataManager.fileExists = function(fileName) {};
- *
- *   Checks to see if "fileName"(or whatever you name it) + ".json" in 
- *   the 'data/' directory exists. Used in "if' statements.
- *
- *   - Example using the above method as well:
- *   if (!DataManager.fileExists("MyDB")) {
- *      DataManager.saveDataFile("MyDB", {"key":value});
- *   }
  *
  *
  * Game_Temp.prototype.random = function(value1, value2) {};
@@ -1566,14 +1583,6 @@ DataManager.saveDataFile = function(fileName, object) {
 	});
 };
 
-DataManager.fileExists = function(fileName) {
-	if (!fileName) return false;
-	const dirPath = this.fileDirectoryPath();
-	const file = dirPath + fileName + ".json";
-	const fs = require("fs");
-	return fs.existsSync(file);
-};
-
 
 // --- BATTLE MANAGER ---------------------------------------------------------
 const bm_updateBattleEnd = BattleManager.updateBattleEnd
@@ -1726,12 +1735,10 @@ Game_Actors.prototype.clear = function(value) {
 const gameActor_setup = Game_Actor.prototype.setup;
 Game_Actor.prototype.setup = function(actorId) {
 	gameActor_setup.call(this, actorId);
-	if (checkTag(this.actor(), /<LIVES[: ]+(\d+)>/i)) {
-		this._lives = Math.max(0, Number(RegExp.$1));
-	} else {
-		this._lives = 0;
-	}
 	this._maxLevel = maxLvCtrl ? levelCap : undefined;
+	this._lives = checkTag(this.actor(), /<LIVES[: ]+(\d+)>/i)
+		? Math.max(0, Number(RegExp.$1))
+		: 0;
 };
 
 const gameActor_changeEquip = Game_Actor.prototype.changeEquip;
@@ -1849,8 +1856,7 @@ Game_Player.prototype.initialize = function() {
 const gamePlayer_setupForNewGame = Game_Player.prototype.setupForNewGame;
 Game_Player.prototype.setupForNewGame = function() {
 	gamePlayer_setupForNewGame.call(this);
-	// Override new direction
-	switch (startDir) {
+	switch (startDir) {// Override new direction
 		case "Down":  this._newDirection = 2; break;
 		case "Left":  this._newDirection = 4; break;
 		case "Right": this._newDirection = 6; break;
