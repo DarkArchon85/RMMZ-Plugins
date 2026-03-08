@@ -11,232 +11,11 @@ Imported["LvMZ_Economy"] = true;
 
 /*:
  * @target MZ
- * @plugindesc [v1.8] Gives life to the world and its merchants by varying up
+ * @plugindesc [v1.9] Gives life to the world and its merchants by varying up
  * their prices based on several factors (including relations and supply).
  * @author LordValinar
  * @url https://github.com/DarkArchon85/RMMZ-Plugins
- * @orderAfter VisuMZ_1_ItemsEquipsCore
- * @orderAfter LvMZ_Core
  * @orderAfter LvMZ_Factions
- *
- * @help
- * ----------------------------------------------------------------------------
- * Introduction
- * ----------------------------------------------------------------------------
- *
- * This plugin is designed to change shops in a major way (May not be
- * compatible with many plugins that also change the shop).
- *
- * - The first and major change is giving shops a limited stock to sell  
- *   to the player and purchase things from the player.
- *
- * - The second is a persistent inventory (If you sell something to that 
- *   merchant.. it'll still be there! At least until they're reset) This 
- *   includes having multiple types of shops on the same NPC (such as a 
- *   shady merchant with 'special' stock?)
- *
- * In addition, there are also "Regions" which can represent different 
- * states, countries, kingdoms, and so on - each with their own tax rate 
- * and subsection controlling Demand. Supply is handled on the merchants
- * themselves.
- *
- * This plugin is part of a set, but can be used independently.
- *
- * == THE ECONOMICS TRINITY ==
- *  - LvMZ_Factions.js
- *  - LvMZ_Economy.js
- *  - LvMZ_Currencies.js
- *
- * ----------------------------------------------------------------------------
- * Instructions
- * ----------------------------------------------------------------------------
- *
- * First and foremost, is the setup. I will try to explain the best I can
- * in regards to each section. So we'll go in order:
- *
- * >> SUPPLY & DEMAND <<
- *
- * Supply settings allow a variance on shop prices based on if the shop has 
- * a certain number of items within your parameter's threshold, and even 
- * then only if they exceed every Nth of your offset parameter. 
- *
- * So... what the heck does all of that mean? Basically you set a minimum 
- * and maximum value as your threshold. If the amount of items the merchant 
- * has exceeds (above or below) this threshold, then the prices of those 
- * items will change.
- *
- * : Min and Max Supply Limits
- *  - These are the thresholds that an item count must exceed before a 
- *    check is made to determine if the price should be adjusted.
- *
- * : Excess Offset
- *  - When an item count is every Nth amount below or above the threshold,
- *    the price is adjusted. So if the offset is 2 and the minimum is 8,
- *    then when the count reaches 6, 4, and 2, the price increases by 
- *    the assigned Price Adjustment.
- *
- * : Price Adjustment
- *  - The amount (in percentage) added or removed from the original 
- *    price of the item.
- *
- * : Regions
- *  - Regions allow you a degree of control over the "Demand" portion.
- *    In addition, tax rates are also set here.
- *  You start by giving a Region a name, a tax rate, and then list what 
- *  Demand Categories you want for items (if any). This way if an item 
- *  has the proper notetag, it will be affected by the prices.
- *  NOTE: Demand adjustments only affect normal currencies/gold rates,
- *   and not alternate currencies (LvMZ_Currencies)
- *
- *  - To set a region, use a plugin parameter (Change Region). 
- *  - To set an item for a demand, use the following notetag:
- * <Demand: name>         
- *  : name being the demand category (case-insensitive)
- *  - Multiple demand tags can be used for the same item to be 
- *    changed based on different regions (as of v1.4 update). You
- *    must list each demand on a new line, for example:
- *
- * > ITEM: "First Aid Kit"
- * <Demand: War>
- * <Demand: Healing>
- *
- *
- * >> GOLD ICON ID <<
- *
- * Fairly straight-forward. Changes the default window with an icon.
- * NOTE: If using VisuStella's Core plugin, you can ignore this.
- *
- *
- * >> STOLEN ITEMS <<
- *
- * This plugin also comes complete with the option to keep track of 
- * stolen items! Sell them back to a shop that is willing (a fence?)
- * or get caught and go to jail! Restore stolen items at any point you 
- * choose (if ever), change prices of stolen items.. and lastly the 
- * ability to temporarily store the party gear if they DO get caught 
- * and need to "put it away" in a lockup or something.
- *
- * : Stolen Item Icon
- *  - This is the icon ID to use in item naming schemes when you are in 
- *    a shop or other menu. The item name is also changed to red 
- *    ( or color 2 from the Windowskin pallette ).
- * 
- * : Stolen Value Markdown
- *  - This is the percentage the item price drops down by if stolen.
- *
- * : Shops Buy Stolen Items
- *  - 3 modes here "Always", "Varies", and "Never":
- *   ALWAYS - Every shop will buy stolen goods. Plain and simple.
- *   VARIES - Only shops with <BuyStolenItems> comment tag to buy them.
- *   NEVER  - No shop will buy stolen items.
- *
- * : Stolen Self Switch
- *  - When you steal an item from an area, it's most likely an Event,
- *    in which case you should use Self Switches to make them "Disappear".
- *    When using either the plugin command or script call to return 
- *    stolen items, this is the Self Switch the plugin will look for 
- *    in addition to the mapId it was stolen from, and which eventId 
- *    was the actual item.
- *  - Stealing from NPCs, Self Switch can control dialogue or other 
- *    options when dealing with that NPC again.
- *
- *
- * >> STOLEN GOLD (NEW in 1.8) <<
- *
- * If you want to track stolen gold (or other coin with LvMZ_Currencies)
- * use the stealGold() or stealItem() functions. When this ITEM is picked 
- * up it will be added to a separate tracker (in case you are caught by 
- * the authorities and they need to remove only the stolen coin).
- *  - Use a Fence to "clean" your stolen money by using the necessary
- *    plugin command or script call
- *  - Script Call:  $gameParty.cleanGold();
- *
- *
- * >> PRICING & SHOP FUNDS <<
- *
- * By default prices are 100% of whatever the database item is, and 
- * selling them gets you 50% of their database price.
- *
- * As long as the item is being purchased or sold with the default 
- * currency method (meaning no <AltCurrency:> selections), it will 
- * use the markup or markdown as a base before calculating the taxes
- * (and possibly adjustments from LvMZ_Factions)!
- * NOTE: With LvMZ_Currencies, it is possible to get decimals in 
- * the calculations, which will be converted if you have multiple 
- * currencies (see LvMZ_Currencies documentation for more detail).
- *
- * : Starting Funds
- *  - The shop will begin with this much money to purchase items 
- *    from players. It will be up to the developer (you) to determine 
- *    when the shop (if ever) gets more money aside from items.
- *
- *  - You can use a plugin command or script call to add more funds.
- *    Or even remove them..
- *
- *
- * : Starting Funds Variance
- *  - Adds or subtracts a random amount from this, to the shop's 
- *    starting funds. Setting to 0 will obviously give no variance.
- *
- * ----------------------------------------------------------------------------
- * The following functions have been overwritten
- * ----------------------------------------------------------------------------
- *
- * [rmmz_objects.js]
- *  - Game_Party.prototype.gainGold
- * [rmmz_scenes.js]
- *  - Scene_Shop.prototype.goldWindowRect
- *  - Scene_Shop.prototype.buyingPrice
- *  - Scene_Shop.prototype.sellingPrice
- * [rmmz_windows.js]
- *  - Window_ItemList.prototype.makeItemList
- *  - Window_Gold.prototype.refresh
- *  - Window_ShopBuy.prototype.isEnabled
- *  - Window_ShopBuy.prototype.makeItemList
- *  - Window_ShopBuy.prototype.drawItem
- *
- * ----------------------------------------------------------------------------
- * Terms of Use
- * ----------------------------------------------------------------------------
- *
- * Free to use and modify for commercial and noncommercial games, with credit.
- * Do NOT remove my name from the Author of this plugin
- * Do NOT reupload this plugin (modified or otherwise) anywhere other than the 
- * RPG Maker Web main forums: https://forums.rpgmakerweb.com/index.php
- *
- * ----------------------------------------------------------------------------
- * Changelog
- * ----------------------------------------------------------------------------
- *
- * v1.8 - Added a separate tracker for stolen gold and a method to clean it 
- *
- * v1.7 - Updates to new LvMZ plugin formats + minor fixes with demo
- *
- * v1.6 - Fixed not accounting for an invalid item when reading for stolen
- *
- * v1.5 - Fixed "logStolenItem()": Method to check arrays didn't work so 
- *        I implimented a function that WILL work.
- *
- * v1.4 - Fixed demands to be case-insensitive (as originally instructed),
- *      - Item notetags now allow for multiple <Demand: name> tags to 
- *        be searched per region.
- *      - Added fixed price adjustments for demands (can stack with the 
- *        rate percentage and vice versa).
- *
- * v1.3 - Now stores party inventory multiple times (instead of overriding) if
- *        caught stealing. Retrieving gear takes the first set each time the 
- *        method is called (until array is empty);
- * 	    - Added option to run an event if you buy out a shop's stock.
- *      - supplyCheck method's adjustment wasn't multiplying properly
- *      - Added gender checks from LvMZ_Factions(v1.1)
- *
- * v1.2 - Added individual shop funds
- *
- * v1.1 - Fixed random item count (wasn't randomizing for EACH item)
- *
- * v1.0 - Plugin finished!
- *
- * ----------------------------------------------------------------------------
  *
  * @param supplyDemand
  * @text Supply & Demand
@@ -307,18 +86,18 @@ Imported["LvMZ_Economy"] = true;
  * @param setBuyPrice
  * @text Buy Price
  * @type number
- * @decimals 1
+ * @decimals 2
  * @desc The percentage(%) of an item, weapon, or armor price
  * listed in the Database when buying.
- * @default 100.0
+ * @default 100.00
  *
  * @param setSellPrice
  * @text Sell Price
  * @type number
- * @decimals 1
+ * @decimals 2
  * @desc The percentage(%) of an item, weapon, or armor price
  * listed in the Database when selling.
- * @default 50.0
+ * @default 50.00
  *
  * @param markUp
  * @text Price Markup
@@ -348,6 +127,15 @@ Imported["LvMZ_Economy"] = true;
  * @desc Add or subtract a random amount of this value from the 
  * shop's starting funds.
  * @default 1000
+ *
+ * @param soldIcon
+ * @text Sold Item Icon
+ * @type number
+ * @decimals 0
+ * @min 0
+ * @desc Icon displayed for sold items for "Buy Back" options.
+ * Default based on vanilla iconset.
+ * @default 208
  *
  * @param breakEnd
  * @text --------------------------
@@ -513,7 +301,6 @@ Imported["LvMZ_Economy"] = true;
  * @type number
  * @decimals 0
  * @min 1
- * @max 2000
  * @desc The database ID for the item, weapon, or armor.
  * @default 1
  *
@@ -668,6 +455,232 @@ Imported["LvMZ_Economy"] = true;
  * @command cleanGold
  * @text Clean Stolen Money
  * @desc Turns all stolen coin into legitimate currency
+ *
+ *
+ * @help
+ * ----------------------------------------------------------------------------
+ * Introduction
+ * ----------------------------------------------------------------------------
+ *
+ * This plugin is designed to change shops in a major way (May not be
+ * compatible with many plugins that also change the shop).
+ *
+ * - The first and major change is giving shops a limited stock to sell  
+ *   to the player and purchase things from the player.
+ *
+ * - The second is a persistent inventory (If you sell something to that 
+ *   merchant.. it'll still be there! At least until they're reset) This 
+ *   includes having multiple types of shops on the same NPC (such as a 
+ *   shady merchant with 'special' stock?)
+ *
+ * - As of version 2.0, a Sold Item icon is added to help identify which
+ *   items are player-sold.
+ *
+ * In addition, there are also "Regions" which can represent different 
+ * states, countries, kingdoms, and so on - each with their own tax rate 
+ * and subsection controlling Demand. Supply is handled on the merchants
+ * themselves.
+ *
+ * This plugin is part of a set, but can be used independently. This 
+ * plugin requires LvMZ_Core due to a major overhaul of its function 
+ * dependencies.
+ *
+ * == THE ECONOMICS TRINITY ==
+ *  - LvMZ_Factions.js
+ *  - LvMZ_Economy.js
+ *  - LvMZ_Currencies.js
+ *
+ * ----------------------------------------------------------------------------
+ * Instructions
+ * ----------------------------------------------------------------------------
+ *
+ * First and foremost, is the setup. I will try to explain the best I can
+ * in regards to each section. So we'll go in order:
+ *
+ * >> SUPPLY & DEMAND <<
+ *
+ * Supply settings allow a variance on shop prices based on if the shop has 
+ * a certain number of items within your parameter's threshold, and even 
+ * then only if they exceed every Nth of your offset parameter. 
+ *
+ * So... what the heck does all of that mean? Basically you set a minimum 
+ * and maximum value as your threshold. If the amount of items the merchant 
+ * has exceeds (above or below) this threshold, then the prices of those 
+ * items will change.
+ *
+ * : Min and Max Supply Limits
+ *  - These are the thresholds that an item count must exceed before a 
+ *    check is made to determine if the price should be adjusted.
+ *
+ * : Excess Offset
+ *  - When an item count is every Nth amount below or above the threshold,
+ *    the price is adjusted. So if the offset is 2 and the minimum is 8,
+ *    then when the count reaches 6, 4, and 2, the price increases by 
+ *    the assigned Price Adjustment.
+ *
+ * : Price Adjustment
+ *  - The amount (in percentage) added or removed from the original 
+ *    price of the item.
+ *
+ * : Regions
+ *  - Regions allow you a degree of control over the "Demand" portion.
+ *    In addition, tax rates are also set here.
+ *  You start by giving a Region a name, a tax rate, and then list what 
+ *  Demand Categories you want for items (if any). This way if an item 
+ *  has the proper notetag, it will be affected by the prices.
+ *  NOTE: Demand adjustments only affect normal currencies/gold rates,
+ *   and not alternate currencies (LvMZ_Currencies)
+ *
+ *  - To set a region, use a plugin parameter (Change Region). 
+ *  - To set an item for a demand, use the following notetag:
+ * <Demand: name>         
+ *  : name being the demand category (case-insensitive)
+ *  - Multiple demand tags can be used for the same item to be 
+ *    changed based on different regions (as of v1.4 update). You
+ *    must list each demand on a new line, for example:
+ *
+ * > ITEM: "First Aid Kit"
+ * <Demand: War>
+ * <Demand: Healing>
+ *
+ *
+ * >> GOLD ICON ID <<
+ *
+ * Fairly straight-forward. Changes the default window with an icon.
+ * NOTE: If using VisuStella's Core plugin, you can ignore this.
+ *
+ *
+ * >> STOLEN ITEMS <<
+ *
+ * This plugin also comes complete with the option to keep track of 
+ * stolen items! Sell them back to a shop that is willing (a fence?)
+ * or get caught and go to jail! Restore stolen items at any point you 
+ * choose (if ever), change prices of stolen items.. and lastly the 
+ * ability to temporarily store the party gear if they DO get caught 
+ * and need to "put it away" in a lockup or something.
+ *
+ * : Stolen Item Icon
+ *  - This is the icon ID to use in item naming schemes when you are in 
+ *    a shop or other menu. The item name is also changed to red 
+ *    ( or color 2 from the Windowskin pallette ).
+ *  - Leave at 0 to not use any icon
+ * 
+ * : Stolen Value Markdown
+ *  - This is the percentage the item price drops down by if stolen.
+ *
+ * : Shops Buy Stolen Items
+ *  - 3 modes here "Always", "Varies", and "Never":
+ *   ALWAYS - Every shop will buy stolen goods. Plain and simple.
+ *   VARIES - Only shops with <BuyStolenItems> comment tag to buy them.
+ *   NEVER  - No shop will buy stolen items.
+ *
+ * : Stolen Self Switch
+ *  - When you steal an item from an area, it's most likely an Event,
+ *    in which case you should use Self Switches to make them "Disappear".
+ *    When using either the plugin command or script call to return 
+ *    stolen items, this is the Self Switch the plugin will look for 
+ *    in addition to the mapId it was stolen from, and which eventId 
+ *    was the actual item.
+ *  - Stealing from NPCs, Self Switch can control dialogue or other 
+ *    options when dealing with that NPC again.
+ *
+ *
+ * >> STOLEN GOLD (NEW in 1.8) <<
+ *
+ * If you want to track stolen gold (or other coin with LvMZ_Currencies)
+ * use the stealGold() or stealItem() functions. When this ITEM is picked 
+ * up it will be added to a separate tracker (in case you are caught by 
+ * the authorities and they need to remove only the stolen coin).
+ *  - Use a Fence to "clean" your stolen money by using the necessary
+ *    plugin command or script call
+ *  - Script Call:  $gameParty.cleanGold();
+ *
+ *
+ * >> PRICING & SHOP FUNDS <<
+ *
+ * By default prices are 100% of whatever the database item is, and 
+ * selling them gets you 50% of their database price.
+ *
+ * As long as the item is being purchased or sold with the default 
+ * currency method (meaning no <AltCurrency:> selections), it will 
+ * use the markup or markdown as a base before calculating the taxes
+ * (and possibly adjustments from LvMZ_Factions)!
+ * NOTE: With LvMZ_Currencies, it is possible to get decimals in 
+ * the calculations, which will be converted if you have multiple 
+ * currencies (see LvMZ_Currencies documentation for more detail).
+ *
+ * : Starting Funds
+ *  - The shop will begin with this much money to purchase items 
+ *    from players. It will be up to the developer (you) to determine 
+ *    when the shop (if ever) gets more money aside from items.
+ *
+ *  - You can use a plugin command or script call to add more funds.
+ *    Or even remove them..
+ *
+ *
+ * : Starting Funds Variance
+ *  - Adds or subtracts a random amount from this, to the shop's 
+ *    starting funds. Setting to 0 will obviously give no variance.
+ *
+ * ----------------------------------------------------------------------------
+ * The following functions have been overwritten
+ * ----------------------------------------------------------------------------
+ *
+ * [rmmz_objects.js]
+ *  - Game_Party.prototype.gainGold
+ * [rmmz_scenes.js]
+ *  - Scene_Shop.prototype.goldWindowRect
+ *  - Scene_Shop.prototype.buyingPrice
+ *  - Scene_Shop.prototype.sellingPrice
+ * [rmmz_windows.js]
+ *  - Window_ItemList.prototype.makeItemList
+ *  - Window_Gold.prototype.refresh
+ *  - Window_ShopBuy.prototype.isEnabled
+ *  - Window_ShopBuy.prototype.makeItemList
+ *  - Window_ShopBuy.prototype.drawItem
+ *
+ * ----------------------------------------------------------------------------
+ * Terms of Use
+ * ----------------------------------------------------------------------------
+ *
+ * Free to use and modify for commercial and noncommercial games, with credit.
+ * Do NOT remove my name from the Author of this plugin
+ * Do NOT reupload this plugin (modified or otherwise) anywhere other than the 
+ * RPG Maker Web main forums: https://forums.rpgmakerweb.com/index.php
+ *
+ * ----------------------------------------------------------------------------
+ * Changelog
+ * ----------------------------------------------------------------------------
+ *
+ * v1.9 - Added Sold Item icon and updated for LvMZ_Core v1.5
+ 
+ * v1.8 - Added a separate tracker for stolen gold and a method to clean it 
+ *
+ * v1.7 - Updates to new LvMZ plugin formats + minor fixes with demo
+ *
+ * v1.6 - Fixed not accounting for an invalid item when reading for stolen
+ *
+ * v1.5 - Fixed "logStolenItem()": Method to check arrays didn't work so 
+ *        I implimented a function that WILL work.
+ *
+ * v1.4 - Fixed demands to be case-insensitive (as originally instructed),
+ *      - Item notetags now allow for multiple <Demand: name> tags to 
+ *        be searched per region.
+ *      - Added fixed price adjustments for demands (can stack with the 
+ *        rate percentage and vice versa).
+ *
+ * v1.3 - Now stores party inventory multiple times (instead of overriding) if
+ *        caught stealing. Retrieving gear takes the first set each time the 
+ *        method is called (until array is empty);
+ * 	    - Added option to run an event if you buy out a shop's stock.
+ *      - supplyCheck method's adjustment wasn't multiplying properly
+ *      - Added gender checks from LvMZ_Factions(v1.1)
+ *
+ * v1.2 - Added individual shop funds
+ *
+ * v1.1 - Fixed random item count (wasn't randomizing for EACH item)
+ *
+ * v1.0 - Plugin finished!
  */
 // ============================================================================
 /*~struct~SnD:
@@ -705,7 +718,7 @@ Imported["LvMZ_Economy"] = true;
  * @min 0
  * @max 100
  * @desc Amount (percentage) to adjust prices for rarer or 
- * more common items. (use positive number only).
+ * more common items (positive number only).
  * @default 1
  *
  * @param -- Regions --
@@ -774,7 +787,7 @@ var LvMZ = LvMZ || {};
 LvMZ.Economy = {
 	name: "Economy",
 	desc: "Adds shop gold and other enhancements!",
-	version: 1.8
+	version: 1.9
 };
 
 (() => {
@@ -792,10 +805,11 @@ const stolenDesc   = params.value('stolenTagDesc','bool');
 // - Direct Shop Manipulation -
 const defaultBuy   = params.value('setBuyPrice','%');
 const defaultSell  = params.value('setSellPrice','%');
-const markUp 	   = params.value('markUp');
-const markDown     = params.value('markDown');
+const markUp 	   = params.value('markUp','eval');
+const markDown     = params.value('markDown','eval');
 const shopFunds    = params.value('ShopFunds','num');
 const variance     = params.value('ShopVariance','num');
+const soldItemIcon = params.value('soldIcon','num');
 // - Supply & Demand -
 const SnD          = params.value('supplyDemand','obj');
 const minSupply    = Number(SnD.supplyMin);
@@ -853,9 +867,7 @@ PluginManager.registerCommand(pluginName, 'stealGold', args => {
 	$gameParty.stealGold(Number(args.value));
 });
 
-PluginManager.registerCommand(pluginName, 'resetStolen', () => {
-	$gameMap.recoverStolenItems();
-});
+PluginManager.registerCommand(pluginName, 'resetStolen', $gameMap.recoverStolenItems());
 
 PluginManager.registerCommand(pluginName, 'changeShop', args => {
 	const id = Number(args.shopId);
@@ -896,9 +908,7 @@ PluginManager.registerCommand(pluginName, 'resetShop', args => {
 	if (shop) shop.refresh();
 });
 
-PluginManager.registerCommand(pluginName, 'cleanGold', () => {
-	$gameParty.cleanGold();
-});
+PluginManager.registerCommand(pluginName, 'cleanGold', $gameParty.cleanGold());
 
 /******************************************************************************
 	rmmv_managers.js
@@ -995,7 +1005,7 @@ Game_System.prototype.demand = function(index) {
 	const shop = event ? event.shopData() : null;
 	const item = shop ? shop._goods[index] : null;
 	if (!item || !this.validRegion(this._region)) return [0,0];
-	if (Lv.checkTag(item, /<DEMAND[: ]+([^>]+)>/i)) {
+	if (checkTag(item, /<DEMAND[: ]+([A-Z ]{2,})>/i)) {
 		let name = RegExp.$1.toLowerCase();
 		let index = this._regionData.indexByKey("name", this._region);
 		const list = this._regionData[index].demands;
@@ -1037,13 +1047,11 @@ Game_System.prototype.validRegion = function(region) {
 };
 
 Game_System.prototype.markUp = function() {
-	const value = params.eval(markUp);
-	return defaultBuy + (value / 100).percent();
+	return defaultBuy + (markUp / 100).percent();
 };
 
 Game_System.prototype.markDown = function() {
-	const value = params.eval(markDown);
-	return defaultSell - (value / 100).percent();
+	return defaultSell - (markDown / 100).percent();
 };
 
 
@@ -1270,7 +1278,7 @@ Game_Party.prototype.retrieveGear = function() {
 	mergeData(this._armors, this._storage[2]);
 	this.gainGold(this._storage[3]);
 	// Then of course, CLEAR the storage
-	this._storage = [];
+	this._storage = null;
 };
 
 // Use in conditional branches
@@ -1304,6 +1312,13 @@ Game_Map.prototype.shopData = function(mapId) {
 	return mapId > 0 ? this._shopData[mapId] ??= {} : null;
 };
 
+Game_Map.prototype.removeShopData = function(mapId, eventId) {
+	const mapData = this._shopData[mapId];
+	if (mapData) delete mapData[eventId];
+	const length = Object.keys(this._shopData[mapId]).length;
+	if (length === 0) delete this._shopData[mapId];
+};
+
 Game_Map.prototype.recoverStolenItems = function() {
 	for (const key of this._stolenItems) {
 		$gameSelfSwitches.setValue(key, false);
@@ -1316,38 +1331,45 @@ Game_Map.prototype.recoverStolenItems = function() {
 const gameEv_initMembers = Game_Event.prototype.initMembers;
 Game_Event.prototype.initMembers = function() {
 	gameEv_initMembers.call(this);
-	this._isShop = false;
-	this._shopId = 0;
+	this.clearShop();
 };
 
 const gameEv_clear = Game_Event.prototype.clearPageSettings;
 Game_Event.prototype.clearPageSettings = function() {
 	gameEv_clear.call(this);
-	this._isShop = false;
-	this._shopId = 0;
+	this.clearShop();
 };
 
 const gameEv_setup = Game_Event.prototype.setupPageSettings;
 Game_Event.prototype.setupPageSettings = function() {
 	gameEv_setup.call(this);
-	this._isShop = false;
+	this.checkIsShop();
+	this.initShopSettings();
+};
+
+Game_Event.prototype.checkIsShop = function() {
+	this.clearShop();
 	for (const command of this.list()) {
 		if (command.code == 302) {
 			this._isShop = true;
 			break;
 		}
 	}
-	this.initShopSettings();
+};
+
+Game_Event.prototype.clearShop = function() {
+	this._isShop = false;
+	this._shopId = 0;
 };
 
 Game_Event.prototype.initShopSettings = function() {
-	if (!this.page() || !this.isShop()) return;	
+	if (!this.page() || !this.isShop()) { this.clearShop(); return;	}
 	const shop = this.shopData();
 	// Manual call required (Game_Interpreter.prototype.resetShop)
 	if (shop.needsRefresh()) return;
 	// First Time Setup (or refreshed)
-	const tagSET = /<COUNT[: ]+SET\s(ITEM||WEAPON||ARMOR)[ ](\d+)>/i;
-	const tagRAND = /<COUNT[: ]+RANDOM\s(ITEM||WEAPON||ARMOR)[ ](\d+)-(\d+)>/i;
+	const tagSET = /<COUNT[: ]+SET[ ]+(ITEM|WEAPON|ARMOR)[ ]+(\d+)>/i;
+	const tagRAND = /<COUNT[: ]+RANDOM[ ]+(ITEM|WEAPON|ARMOR)[ ]+(\d+)-(\d+)>/i;
 	const tagINF = /<COUNT[: ]+UNLIMITED>/i;
 	const tBuyStolen = /<BUYSTOLENITEMS>/i;
 	const tagFUNDS = /<SHOPGOLD[: ]+(\d+)[ ](\d+)>/i;
@@ -1390,7 +1412,7 @@ Game_Event.prototype.initShopSettings = function() {
 };
 
 Game_Event.prototype.isShop = function() {
-	return this._isShop;
+	return !!this._isShop;
 };
 
 Game_Event.prototype.shopData = function() {
@@ -1440,11 +1462,11 @@ Game_Event.prototype.switchShops = function(id) {
 
 
 // --- GAME INTERPRETER ---
-Game_Interpreter.prototype.shop = function(type) {
+Game_Interpreter.prototype.shop = function(type="default") {
 	const event = $gameMap.event(this._eventId);
 	if (event.isShop()) {
 		const shop = event.shopData();
-		switch (type) {
+		switch (type.toLowerCase()) {
 			case 'items':  return shop._goods;
 			case 'prices': return shop._costs;
 			case 'num':    return shop._stock;
@@ -1505,6 +1527,21 @@ Game_Interpreter.prototype.retrieveCache = function() {
 	}
 	// - Now clear it
 	delete $gameParty._contraband[this._mapId][this._eventId];
+};
+
+
+// --- LVMZ REMOTE_EVENT (LvMZ_Core) ---
+const lvmzEv_setupEv = LvMZ_RemoteEvent.prototype.setupRemoteEvent;
+LvMZ_RemoteEvent.prototype.setupRemoteEvent = function() {
+	lvmzEv_setupEv.call(this);
+	this.checkIsShop();
+	this.initShopSettings();
+};
+
+const lvmzEv_clearEv = LvMZ_RemoteEvent.prototype.clearRemoteEvent;
+LvMZ_RemoteEvent.prototype.clearRemoteEvent = function() {
+	lvmzEv_clearEv.call(this);
+	this.clearShop();
 };
 
 /******************************************************************************
@@ -1706,25 +1743,22 @@ Window_Base.prototype.drawNewGoldValue = function(value, unit, x, y, w) {
 
 const winBase_drawItemName = Window_Base.prototype.drawItemName;
 Window_Base.prototype.drawItemName = function(item, x, y, width) {
-	if (!item || !item.stolenType) {
-		return winBase_drawItemName.call(this, item, x, y, width);
+	if (item && item.stolenType) {
+		this.drawStolenItemName(item, x, y, width);
+	} else {
+		winBase_drawItemName.call(this, item, x, y, width);
 	}
-	this.drawStolenItemName(item, x, y, width);
 };
 
 Window_Base.prototype.drawStolenItemName = function(item, x, y, width) {
 	const iconY = y + (this.lineHeight() - ImageManager.iconHeight) / 2;
-	const textMargin = ImageManager.iconWidth + 4;
+	const delta = ImageManager.standardIconWidth - ImageManager.iconWidth;
+	const textMargin = ImageManager.standardIconWidth + 4;
 	const itemWidth = Math.max(0, width - textMargin);
 	const icon = stolenIcon > 0 ? stolenIcon : item.iconIndex;
-	this.drawIcon(icon, x, iconY);
 	this.processColorChange(2); // stolen item!
-	this.drawText(item.name, x + textMargin, y, itemWidth); /*
-	if (stolenIcon > 0) {
-		const stolenX = x + textMargin + this.textWidth(item.name) + 6;
-		this.drawIcon(stolenIcon, stolenX, iconY);
-	}*/
-	this.resetFontSettings();
+	this.drawIcon(icon, x + delta / 2, iconY);
+	this.drawText(item.name, x + textMargin, y, itemWidth);
 };
 
 
@@ -1737,7 +1771,7 @@ Window_Selectable.prototype.select = function(index) {
 
 Window_Selectable.prototype.processActiveRefresh = function() {
 	const scene = SceneManager._scene;
-	if (scene.constructor === Scene_Shop) {
+	if (scene instanceof Scene_Shop) {
 		const buy = scene._buyWindow ? scene._buyWindow.active : false;
 		const sell = scene._sellWindow ? scene._sellWindow.active : false;
 		const num = scene._numberWindow ? scene._numberWindow.active : false;
@@ -1834,6 +1868,7 @@ Window_ShopBuy.prototype.drawItem = function(index) {
 	this.drawItemName(item, rect.x, rect.y, rect.width);
 	this.drawShopBuyPrice(index, rect);
 	this.drawItemCount(index, rect);
+	this.drawSoldItemIcon(index, rect);
 	this.changePaintOpacity(true);
 	this.resetFontSettings();
 };
@@ -1864,10 +1899,7 @@ Window_ShopBuy.prototype.drawItemCount = function(index, rect) {
 	if (nCount === 255) return; // unlimited
 	const item = this.itemAt(index);
 	const iw = ImageManager.iconWidth;
-	/* Temporarily removed (testing options)
-	const sw = item.stolenType ? iw + 6 : 0;
-	*/
-	const nameWidth = iw + this.textWidth(item.name) + 8; // + sw;
+	const nameWidth = iw + this.textWidth(item.name) + 8;
 	const countName = "("+nCount.padZero(2)+")";
 	const countWidth = Math.max(0, rect.width - nameWidth);
 	const countX = rect.x + nameWidth;
@@ -1877,6 +1909,7 @@ Window_ShopBuy.prototype.drawItemCount = function(index, rect) {
 	this.changePaintOpacity(true);
 	this.resetFontSettings();
 };
+
 
 Window_ShopBuy.prototype.itemCount = function(index) {
 	return this._stock[index] || 0;
@@ -1893,6 +1926,21 @@ Window_ShopBuy.prototype.setItemCountColor = function(count) {
 		this.processColorChange(14); // warning yellow
 	} else if (count >= (max+os)) {
 		this.processColorChange(24); // excess green
+	}
+};
+
+Window_ShopBuy.prototype.drawSoldItemIcon = function(index, rect) {
+	const item = this.itemAt(index);
+	if (item.buyback && soldItemIcon > 0) {
+		const count = this.itemCount(index);
+		const iw = ImageManager.iconWidth;
+		let nameWidth = iw + this.textWidth(item.name) + 8;
+		if (count !== 255) {
+			const countName = "("+count.padZero(2)+")";
+			nameWidth += this.textWidth(countName) + 4;
+		}
+		this.drawIcon(soldItemIcon, rect.x + nameWidth, rect.y + 2);
+		this.resetFontSettings();
 	}
 };
 
@@ -2017,6 +2065,7 @@ Window_ShopGold.prototype.numWindowRefresh = function() {
 
 // ============================================================================
 // --- CUSTOM FUNCTIONS ---
+
 function LvMZ_Shop() {
 	this.initialize(...arguments);
 }
@@ -2103,6 +2152,9 @@ LvMZ_Shop.prototype.setupStock = function(shopGoods) {
 		const checkNum = goods[4] ? typeof goods[4] === 'number' : false;
 		const count = checkNum ? goods[4] : this.itemCount(goods[0]);
 		if (this.checkPrice(item) && count > 0) {
+			if (goods[5]) {
+				item.buyback = true;
+			}
 			this._goods.push(item);
 			this._costs.push(price);
 			this._stock.push(count);
@@ -2124,9 +2176,7 @@ LvMZ_Shop.prototype.goodsToItem = function(goods) {
 LvMZ_Shop.prototype.itemCount = function(index) {
 	let n = this._count[index];
 	if (Array.isArray(n)) {
-		const min = Math.ceil(n[0]);
-		const max = Math.floor(n[1]);
-		n = ~~(Math.random() * (max - min + 1) + min);
+		n = $gameTemp.random(n[0], n[1]);
 	}
 	return n;
 };
@@ -2155,11 +2205,12 @@ LvMZ_Shop.prototype.maxStock = function() {
 LvMZ_Shop.prototype.addGoods = function(item, amount) {
 	item = itemProxy(item);
 	if (Array.isArray(amount)) {
-		const min = Math.ceil(amount[0]);
-		const max = Math.floor(amount[1]);
-		amount = ~~(Math.random() * (max - min + 1) + min);
+		amount = $gameTemp.random(amount[0], amount[1]);
 	}
 	if (this.checkPrice(item) && amount > 0) {
+		if (soldItemIcon > 0) {
+			item.buyback = true;
+		}
 		this._goods.push(item);
 		this._costs.push(item.price);
 		this._stock.push(amount);
@@ -2189,15 +2240,16 @@ LvMZ_Shop.prototype.remove = function(index) {
 };
 
 LvMZ_Shop.prototype.goods = function() {
-	// [type,itemId,1,price,num]  <-- format to export
+	// [type,itemId,1,price,num,sold]  <-- format to export
 	const list = [];
 	for (let i = 0; i < this._goods.length; i++) {
 		let item = this._goods[i];
 		let price = this._costs[i];
 		let num = this._stock[i];
 		let type = this.itemType(item);
-		if ([0,1,2].includes(type)) {
-			list.push([type,item.id,1,price,num]);
+		let sold = !!item.buyback;
+		if (type !== -1) {
+			list.push([type,item.id,1,price,num,sold]);
 		}
 	}
 	return list;
