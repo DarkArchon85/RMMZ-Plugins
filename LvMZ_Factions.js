@@ -11,11 +11,572 @@ Imported["LvMZ_Factions"] = true;
 
 /*:
  * @target MZ
- * @plugindesc [v1.9] Core Plugin - Required for other plugins interacting
+ * @plugindesc [v2.0] Core Plugin - Required for other plugins interacting
  * with factions, relationship, genders or titles (ex: LvMZ_Economy.js)
  * @author LordValinar
  * @url https://github.com/DarkArchon85/RMMZ-Plugins
  * @orderAfter LvMZ_Core
+ *
+ * @param -- Age Settings --
+ * @default ----------------------------------
+ *
+ * @param minAge
+ * @text Default-Min Age
+ * @parent -- Age Settings --
+ * @type number
+ * @decimals 0
+ * @min 1
+ * @desc The lowest age an actor or NPC (event) can go.
+ * @default 15
+ *
+ * @param defaultAge
+ * @text Default-Start Age
+ * @parent -- Age Settings --
+ * @type number
+ * @decimals 0
+ * @desc Default age an actor or NPC starts at. Minium and
+ * maximum are defined by their parameters.
+ * @default 18
+ *
+ * @param defaultLife
+ * @text Default-Max Age
+ * @parent -- Age Settings --
+ * @type number
+ * @decimals 0
+ * @desc Default lifespan for NPC or actor.
+ * This is the maximum possible age.
+ * @default 85
+ *
+ * @param ageSelfVar
+ * @text Age Variable
+ * @parent -- Age Settings --
+ * @type variable
+ * @desc Variable ID to store Event age and lifespan
+ * @default 0
+ *
+ * @param -- List Settings --
+ * @default ----------------------------------
+ *
+ * @param FactionList
+ * @text Faction Relations
+ * @parent -- List Settings --
+ * @type struct<Faction>[]
+ * @desc List of possible factions. If the player is in one of 
+ * these factions (or even the leader), they get discounts.
+ * @default ["{\"Name\":\"Imperium\",\"RelationList\":\"[\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Imperium\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"10\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Nobles\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Guards\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Merchants\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Villagers\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Thieves Guild\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"-5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Pirates\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"-5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Nature\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"None\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\"]\",\"hiddenFac\":\"false\"}","{\"Name\":\"Nobles\",\"RelationList\":\"[\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Imperium\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Nobles\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Guards\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Merchants\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Villagers\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"-1\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Thieves Guild\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"-5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Pirates\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"-5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Nature\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"None\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\"]\",\"hiddenFac\":\"false\"}","{\"Name\":\"Guards\",\"RelationList\":\"[\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Imperium\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Nobles\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Guards\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Merchants\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Villagers\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Thieves Guild\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"-5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Pirates\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"-5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Nature\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"None\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\"]\",\"hiddenFac\":\"false\"}","{\"Name\":\"Merchants\",\"RelationList\":\"[\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Imperium\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Nobles\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Guards\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Merchants\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Villagers\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"1\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Thieves Guild\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"-5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Pirates\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"-5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Nature\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"None\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\"]\",\"hiddenFac\":\"false\"}","{\"Name\":\"Villagers\",\"RelationList\":\"[\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Imperium\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"-5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Nobles\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"-1\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Guards\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Merchants\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Villagers\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Thieves Guild\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"-5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Pirates\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"-5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Nature\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"None\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\"]\",\"hiddenFac\":\"false\"}","{\"Name\":\"Thieves Guild\",\"RelationList\":\"[\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Imperium\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"-5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Nobles\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Guards\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"-5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Merchants\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Villagers\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Thieves Guild\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Pirates\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Nature\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"None\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\"]\",\"hiddenFac\":\"true\"}","{\"Name\":\"Pirates\",\"RelationList\":\"[\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Imperium\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"-5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Nobles\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Guards\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"-5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Merchants\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Villagers\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Thieves Guild\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Pirates\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Nature\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"None\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\"]\",\"hiddenFac\":\"false\"}","{\"Name\":\"Nature\",\"RelationList\":\"[\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Imperium\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"-5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Nobles\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Guards\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Merchants\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Villagers\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Thieves Guild\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Pirates\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Nature\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"None\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\"]\",\"hiddenFac\":\"false\"}","{\"Name\":\"None\",\"RelationList\":\"[\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Imperium\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Nobles\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Guards\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Merchants\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Villagers\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Thieves Guild\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Pirates\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Nature\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"None\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\"]\",\"hiddenFac\":\"false\"}"]
+ *
+ * @param RaceList
+ * @text Racial Relations
+ * @parent -- List Settings --
+ * @type struct<Race>[]
+ * @desc List of Races and their relations with each other.
+ * Compatable with ElementsStatesCore (VisuStella)
+ * @default ["{\"Name\":\"Human\",\"RelationList\":\"[\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Human\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"High Elf\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Wood Elf\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Dark Elf\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"-5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Dwarf\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Gnome\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Halfling\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Wolfkin\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"-5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Felyne\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"-5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Lizardman\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"-5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Vampire\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\"]\",\"isMonster\":\"false\"}","{\"Name\":\"High Elf\",\"RelationList\":\"[\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Human\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"High Elf\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"10\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Wood Elf\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Dark Elf\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"-5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Dwarf\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"-5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Gnome\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Halfling\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Wolfkin\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Felyne\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Lizardman\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"-5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Vampire\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\"]\",\"isMonster\":\"false\"}","{\"Name\":\"Wood Elf\",\"RelationList\":\"[\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Human\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"-5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"High Elf\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Wood Elf\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Dark Elf\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"-5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Dwarf\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"-5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Gnome\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Halfling\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Wolfkin\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Felyne\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Lizardman\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"-5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Vampire\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\"]\",\"isMonster\":\"false\"}","{\"Name\":\"Dark Elf\",\"RelationList\":\"[\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Human\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"High Elf\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"-5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Wood Elf\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"-5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Dark Elf\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"10\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Dwarf\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Gnome\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Halfling\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Wolfkin\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Felyne\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Lizardman\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Vampire\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\"]\",\"isMonster\":\"false\"}","{\"Name\":\"Dwarf\",\"RelationList\":\"[\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Human\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"High Elf\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"-5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Wood Elf\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"-5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Dark Elf\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"-5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Dwarf\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"10\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Gnome\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Halfling\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Wolfkin\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Felyne\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Lizardman\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"-5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Vampire\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\"]\",\"isMonster\":\"false\"}","{\"Name\":\"Gnome\",\"RelationList\":\"[\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Human\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"High Elf\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Wood Elf\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Dark Elf\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Dwarf\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Gnome\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Halfling\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Wolfkin\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"-5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Felyne\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"-5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Lizardman\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"-5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Vampire\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\"]\",\"isMonster\":\"false\"}","{\"Name\":\"Halfling\",\"RelationList\":\"[\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Human\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"High Elf\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Wood Elf\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Dark Elf\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"-5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Dwarf\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Gnome\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Halfling\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Wolfkin\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Felyne\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Lizardman\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"-5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Vampire\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\"]\",\"isMonster\":\"false\"}","{\"Name\":\"Wolfkin\",\"RelationList\":\"[\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Human\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"-5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"High Elf\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Wood Elf\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Dark Elf\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Dwarf\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Gnome\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Halfling\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Wolfkin\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"10\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Felyne\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"-5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Lizardman\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Vampire\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\"]\",\"isMonster\":\"true\"}","{\"Name\":\"Felyne\",\"RelationList\":\"[\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Human\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"-5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"High Elf\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Wood Elf\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Dark Elf\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Dwarf\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Gnome\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Halfling\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Wolfkin\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"-5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Felyne\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"10\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Lizardman\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Vampire\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\"]\",\"isMonster\":\"true\"}","{\"Name\":\"Lizardman\",\"RelationList\":\"[\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Human\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"-5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"High Elf\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Wood Elf\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Dark Elf\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Dwarf\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"-5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Gnome\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"-5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Halfling\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Wolfkin\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Felyne\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"-5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Lizardman\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"15\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Vampire\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\"]\",\"isMonster\":\"true\"}","{\"Name\":\"Vampire\",\"RelationList\":\"[\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Human\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"High Elf\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Wood Elf\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Dark Elf\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Dwarf\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Gnome\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Halfling\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Wolfkin\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Felyne\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Lizardman\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Vampire\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\"]\",\"isMonster\":\"true\"}"]
+ *
+ * @param GenderList
+ * @text Gender Relations
+ * @parent -- List Settings --
+ * @type struct<Gender>[]
+ * @desc List of Genders and their relations with each other.
+ * @default ["{\"Name\":\"Male\",\"GenderList\":\"[\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Male\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Female\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Both\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"None\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Other\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\"]\"}","{\"Name\":\"Female\",\"GenderList\":\"[\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Male\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Female\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Both\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"None\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Other\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\"]\"}","{\"Name\":\"Both\",\"GenderList\":\"[\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Male\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Female\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Both\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"None\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Other\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\"]\"}","{\"Name\":\"None\",\"GenderList\":\"[\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Male\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Female\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Both\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"None\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Other\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\"]\"}","{\"Name\":\"Other\",\"GenderList\":\"[\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Male\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Female\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Both\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"None\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Other\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\"]\"}"]
+ *
+ * @param ReputationList
+ * @text Reputations
+ * @parent -- List Settings --
+ * @type struct<Reputation>[]
+ * @desc List of reputations (famous/infamous) or possibly
+ * heroic/villain, etc. Price adjustments available.
+ * @default ["{\"Name\":\"Good\",\"MinValue\":\"26\",\"MaxValue\":\"100\",\"RelationList\":\"[\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Good\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Neutral\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Evil\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"-5\\\\\\\"}\\\"]\"}","{\"Name\":\"Neutral\",\"MinValue\":\"-25\",\"MaxValue\":\"25\",\"RelationList\":\"[\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Good\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Neutral\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Evil\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"-5\\\\\\\"}\\\"]\"}","{\"Name\":\"Evil\",\"MinValue\":\"-100\",\"MaxValue\":\"-26\",\"RelationList\":\"[\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Good\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"-5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Neutral\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Evil\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\"]\"}"]
+ *
+ * @param RelationScale
+ * @text Relationship Scale
+ * @parent -- List Settings --
+ * @type struct<Relationship>[]
+ * @desc List of name and value of each relationship status.
+ * From hostile to friendly, or otherwise defined by you!
+ * @default ["{\"Name\":\"Best Friends\",\"MinValue\":\"91\",\"MaxValue\":\"100\",\"Value\":\"5\"}","{\"Name\":\"Great Friends\",\"MinValue\":\"75\",\"MaxValue\":\"90\",\"Value\":\"3\"}","{\"Name\":\"Friends\",\"MinValue\":\"50\",\"MaxValue\":\"74\",\"Value\":\"2\"}","{\"Name\":\"Acquaintances\",\"MinValue\":\"25\",\"MaxValue\":\"49\",\"Value\":\"1\"}","{\"Name\":\"Just Met\",\"MinValue\":\"6\",\"MaxValue\":\"24\",\"Value\":\"0\"}","{\"Name\":\"Unknown\",\"MinValue\":\"0\",\"MaxValue\":\"5\",\"Value\":\"0\"}","{\"Name\":\"Rivals\",\"MinValue\":\"-1\",\"MaxValue\":\"-5\",\"Value\":\"0\"}","{\"Name\":\"Frienemies\",\"MinValue\":\"-6\",\"MaxValue\":\"-25\",\"Value\":\"-1\"}","{\"Name\":\"Enemies\",\"MinValue\":\"-26\",\"MaxValue\":\"-85\",\"Value\":\"-3\"}","{\"Name\":\"Nemesis\",\"MinValue\":\"-86\",\"MaxValue\":\"-100\",\"Value\":\"-5\"}"]
+ *
+ * @param RomanceScale
+ * @text Romanceable Scale
+ * @parent -- List Settings --
+ * @type struct<Relationship>[]
+ * @desc List of name and value of each romance status.
+ * From acquaintances to lovers, or otherwise defined.
+ * @default ["{\Name\":\"Life Partners\",\"MinValue\":\"81\",\"MaxValue\":\"100\",\"Value\":\"5\"}","{\Name\":\"Lovers\",\"MinValue\":\"61\",\"MaxValue\":\"80\",\"Value\":\"3\"}","{\Name\":\"Courting\",\"MinValue\":\"41\",\"MaxValue\":\"60\",\"Value\":\"2\"}","{\Name\":\"Romantic Interests\",\"MinValue\":\"21\",\"MaxValue\":\"40\",\"Value\":\"1\"}","{\Name\":\"Acquaintances\",\"MinValue\":\"1\",\"MaxValue\":\"20\",\"Value\":\"0\"}"]
+ *
+ * @param TitleList
+ * @text Title Relations
+ * @parent -- List Settings --
+ * @type struct<Title>[]
+ * @desc List of titles
+ * @default ["{\"Name\":\"Monarch\",\"Value\":\"100\"}","{\"Name\":\"Royal\",\"Value\":\"50\"}","{\"Name\":\"Heir\",\"Value\":\"25\"}","{\"Name\":\"Noble\",\"Value\":\"15\"}","{\"Name\":\"Knight\",\"Value\":\"5\"}","{\"Name\":\"Hero\",\"Value\":\"1\"}","{\"Name\":\"Criminal\",\"Value\":\"-5\"}"]
+ *
+ * @param AgeList
+ * @text Age Relations
+ * @parent -- List Settings --
+ * @type struct<Age>[]
+ * @desc List of Ages and value adjustments (LvMZ_Economy)
+ * @default []
+ *
+ * @ --------------------------------------------------------------------------
+ *
+ * @command setFaction
+ * @text Set Target Faction
+ * @desc Sets a target to be part of a specific faction.
+ *
+ * @arg target
+ * @text Target
+ * @type select
+ * @option Actor
+ * @option Party
+ * @option Event
+ * @desc Choose an actor, event, or the whole party.
+ * Setting to Party ignores targetId
+ * @default Actor
+ *
+ * @arg targetId
+ * @text Target ID
+ * @type number
+ * @decimals 0
+ * @min 1
+ * @max 999
+ * @desc The Player Index or Event ID 
+ * Player Index (1 = party leader, 2 = 2nd party member, etc)
+ * @default 1
+ *
+ * @arg factionName
+ * @text Choose Faction
+ * @desc Faction name to be assigned.
+ * Reminder: Case-Sensitive and the faction must exist!
+ * @default 
+ *
+ * @arg leader
+ * @text Set Leader
+ * @type boolean
+ * @on Leader
+ * @off Member
+ * @desc Set whether or not Target is the leader of the faction.
+ * If PARTY, first member becomes leader.
+ * @default false
+ *
+ * @ --------------------------------------------------------------------------
+ *
+ * @command leaveFaction
+ * @text Leave Faction
+ * @desc Clears target from any faction data.
+ *
+ * @arg target
+ * @text Target
+ * @type select
+ * @option Actor
+ * @option Party
+ * @option Event
+ * @desc Choose an actor, event, or the whole party.
+ * Setting to Party ignores targetId
+ * @default Actor
+ *
+ * @arg targetId
+ * @text Target ID
+ * @type number
+ * @decimals 0
+ * @min 1
+ * @max 999
+ * @desc The Player Index or Event ID 
+ * Player Index (1 = party leader, 2 = 2nd party member, etc)
+ * @default 1
+ *
+ * @ --------------------------------------------------------------------------
+ *
+ * @command facStatus
+ * @text Set Faction Status
+ * @desc Setting the hidden status of the target's faction.
+ * Can also set for whole party (targetID is ignored)
+ *
+ * @arg target
+ * @text Target Type
+ * @type select
+ * @option Actor
+ * @option Party
+ * @option Event
+ * @desc Choose an actor, event, or the whole party.
+ * NOTE: targetID ignored if using "Party"
+ * @default Actor
+ *
+ * @arg targetId
+ * @text Target ID
+ * @type number
+ * @decimals 0
+ * @min 1
+ * @max 999
+ * @desc The Player Index or Event ID 
+ * Player Index (1 = party leader, 2 = 2nd party member, etc)
+ * @default 1
+ *
+ * @arg setStatus
+ * @text Set Status
+ * @type boolean
+ * @on Hide
+ * @off Reveal
+ * @desc Do you with to hide or reveal the faction status for 
+ * the target?
+ * @default false
+ *
+ * @ --------------------------------------------------------------------------
+ *
+ * @command setRace
+ * @text Set Target Race
+ * @desc Sets a target to be a specific race.
+ * Reminder: Case-Sensitive and the race must exist!
+ *
+ * @arg target
+ * @text Target
+ * @type select
+ * @option Actor
+ * @option Event
+ * @desc Choose whether an actor or event gets this.
+ * @default Actor
+ *
+ * @arg targetId
+ * @text Target ID
+ * @type number
+ * @decimals 0
+ * @min 1
+ * @max 999
+ * @desc The Player Index or Event ID 
+ * Player Index (1 = party leader, 2 = 2nd party member, etc)
+ * @default 1
+ *
+ * @arg raceName
+ * @text Choose Race
+ * @desc The name of the race to switch to. This will only 
+ * work if NOT using VisuStella's ElementStatesCore!
+ * @default 
+ *
+ * @ --------------------------------------------------------------------------
+ *
+ * @command setRelation
+ * @text Change Relation
+ * @desc Changes the relationship between Origin and Target.
+ * See (instructions) for details.
+ *
+ * @arg source
+ * @text Origin
+ * @type select
+ * @option Actor
+ * @option Event
+ * @desc Choose how (actor or event) feels about target.
+ * @default Actor
+ *
+ * @arg sourceId
+ * @text Origin ID
+ * @desc Actor or Event ID of source object.
+ * You may also use javascript (see Help)
+ * @default this
+ *
+ * @arg target
+ * @text Target
+ * @type select
+ * @option Actor
+ * @option Event
+ * @option Party
+ * @desc Origin changes relation with a single actor, event,
+ * or the entire actor party (see Help)
+ * @default Event
+ *
+ * @arg targetId
+ * @text Target ID
+ * @desc Actor or Event ID of target object.
+ * You may also use javascript (see Help)
+ * @default this
+ *
+ * @arg mapId
+ * @text Event Map ID
+ * @desc Numerical(1-999) or Javascript; If getting an 
+ * event from another map (see Help)
+ * @default this
+ *
+ * @arg type
+ * @text Relation Type
+ * @type select
+ * @option Friendship
+ * @option Romance
+ * @desc Choose the relation type to adjust
+ * @default Friendship
+ *
+ * @arg value
+ * @text Adjustment
+ * @type number
+ * @decimals 0
+ * @min -9999
+ * @max 9999
+ * @desc How much to adjust the relationship between Origin 
+ * has with Target.
+ * @default 0
+ *
+ * @arg reset
+ * @text Reset Relations
+ * @type boolean
+ * @on Reset
+ * @off Default
+ * @desc Resetting will return standing to 0 ignoring the value 
+ * adjustment argument in this command.
+ * @default false
+ *
+ * @ --------------------------------------------------------------------------
+ *
+ * @command setReputation
+ * @text Change Reputation
+ * @desc Alters the target's reputation
+ *
+ * @arg target
+ * @text Target
+ * @type select
+ * @option Actor
+ * @option Event
+ * @desc Choose which one will get reputation adjustment.
+ * @default Actor
+ *
+ * @arg targetId
+ * @text Target ID
+ * @type number
+ * @decimals 0
+ * @min 1
+ * @max 999
+ * @desc The Player Index or Event ID 
+ * Player Index (1 = party leader, 2 = 2nd party member, etc)
+ * @default 1
+ *
+ * @arg value
+ * @text Adjusted Value
+ * @type number
+ * @min -9999
+ * @max 9999
+ * @desc The amount to add or subtract current actor's 
+ * reputation value from. 0 does nothing
+ * @default 0
+ *
+ * @ --------------------------------------------------------------------------
+ *
+ * @command addTitle
+ * @text Add Title
+ * @desc Gives the target a title! Can have multiple.
+ * Reminder: Case-Sensitive and the title must exist!
+ *
+ * @arg target
+ * @text Target
+ * @type select
+ * @option Actor
+ * @option Party
+ * @option Event
+ * @desc Choose an actor, event, or the whole party.
+ * NOTE: targetID ignored if using "Party"
+ * @default Actor
+ *
+ * @arg targetId
+ * @text Target ID
+ * @type number
+ * @decimals 0
+ * @min 1
+ * @max 999
+ * @desc The Player Index or Event ID 
+ * Player Index (1 = party leader, 2 = 2nd party member, etc)
+ * @default 1
+ *
+ * @arg titleName
+ * @text Choose Title
+ * @desc The title to bestow.
+ * Reminder: Case-Sensitive and the title must exist!
+ * @default 
+ *
+ * @ --------------------------------------------------------------------------
+ *
+ * @command remTitle
+ * @text Remove Title
+ * @desc Remove an unwanted title
+ *
+ * @arg target
+ * @text Target
+ * @type select
+ * @option Actor
+ * @option Party
+ * @option Event
+ * @desc Choose an actor, event, or the whole party.
+ * NOTE: targetID ignored if using "Party"
+ * @default Actor
+ *
+ * @arg targetId
+ * @text Target ID
+ * @type number
+ * @decimals 0
+ * @min 1
+ * @max 999
+ * @desc The Player Index or Event ID 
+ * Player Index (1 = party leader, 2 = 2nd party member, etc)
+ * @default 1
+ *
+ * @arg titleName
+ * @text Title Name
+ * @desc The title by name.
+ * NOTE: Case-Sensitive and must already exist on target.
+ * @default 
+ *
+ * @ --------------------------------------------------------------------------
+ *
+ * @command clearTitles
+ * @text Clear All Titles
+ * @desc Removes ALL titles from target
+ *
+ * @arg target
+ * @text Target
+ * @type select
+ * @option Actor
+ * @option Party
+ * @option Event
+ * @desc Choose an actor, event, or the whole party.
+ * NOTE: targetID ignored if using "Party"
+ * @default Actor
+ *
+ * @arg targetId
+ * @text Target ID
+ * @type number
+ * @decimals 0
+ * @min 1
+ * @max 999
+ * @desc The Player Index or Event ID 
+ * Player Index (1 = party leader, 2 = 2nd party member, etc)
+ * @default 1
+ *
+ * @ --------------------------------------------------------------------------
+ *
+ * @command setGender
+ * @text Set Target Gender
+ * @desc Sets a target to be a specific gender.
+ * Reminder: Case-Sensitive and the gender must exist!
+ *
+ * @arg target
+ * @text Target
+ * @type select
+ * @option Actor
+ * @option Event
+ * @desc Choose whether an actor or event gets this.
+ * @default Actor
+ *
+ * @arg targetId
+ * @text Target ID
+ * @type number
+ * @decimals 0
+ * @min 1
+ * @max 999
+ * @desc The Player Index or Event ID 
+ * Player Index (1 = party leader, 2 = 2nd party member, etc)
+ * @default 1
+ *
+ * @arg genderName
+ * @text Choose Gender
+ * @desc The name of the gender to switch to.
+ * @default 
+ *
+ * @ --------------------------------------------------------------------------
+ *
+ * @command setAge
+ * @text Set Target Age
+ * @desc Adjusts the target age to <value>.
+ * 
+ * @arg target
+ * @text Target
+ * @type select
+ * @option Actor
+ * @option Event
+ * @desc Choose actor or event to adjust age.
+ * @default Actor
+ *
+ * @arg targetId
+ * @text Target ID
+ * @desc Actor or Event ID of target object.
+ * You may also use javascript (see Help)
+ * @default this
+ *
+ * @arg mapId
+ * @text Event Map ID
+ * @desc Numerical(1-999) or Javascript; If getting an 
+ * event from another map (see Help)
+ * @default this
+ *
+ * @arg value
+ * @text Age
+ * @type number
+ * @decimals 0
+ * @desc Min-Max determiend by plugin parameters and adjustments.
+ * Default: Min(15), Age(18), Lifespan(85)
+ * @default 0
+ *
+ * @arg lifespan
+ * @text Max Lifespan Adjustment
+ * @type number
+ * @decimals 0
+ * @min 0
+ * @desc Number of years to add onto the defaultLife parameter.
+ * Leave at 0 for no adjustment.
+ * @default 0
+ *
+ * @ --------------------------------------------------------------------------
+ *
+ * @command resetAge
+ * @text Reset Target Age
+ * @desc Returns target age and lifespan to defaults.
+ * 
+ * @arg target
+ * @text Target
+ * @type select
+ * @option Actor
+ * @option Event
+ * @desc Choose actor or event to adjust
+ * @default Actor
+ *
+ * @arg targetId
+ * @text Target ID
+ * @desc Actor or Event ID of target object
+ * You may also use javascript (see Help)
+ * @default this
+ *
+ * @arg mapId
+ * @text Event Map ID
+ * @desc Numerical(1-999) or Javascript; If getting an 
+ * event from another map (see Help)
+ * @default this
+ *
+ * @ --------------------------------------------------------------------------
+ *
+ * @command setPriceAdjust
+ * @text Set Price Adjustment
+ * @desc Adjusts a price by percentage(%) from the merchant
+ * (this event) towards the party leader.
+ *
+ * @arg type
+ * @text Adjustment Type
+ * @type select
+ * @option Faction
+ * @option Race
+ * @option Gender
+ * @option Reputation
+ * @option Relation
+ * @option Romance
+ * @option Title
+ * @option Age
+ * @desc The adjustment value type to change.
+ * Original values are not touched.
+ * @default Faction
+ *
+ * @arg value
+ * @text Adjustment Value
+ * @type number
+ * @decimals 0
+ * @min -200
+ * @max 200
+ * @desc Adjust the percentage(%) value that the source
+ * feels about the target. 0 Does nothing.
+ * @default 0
+ *
  *
  * @help
  * ----------------------------------------------------------------------------
@@ -86,7 +647,7 @@ Imported["LvMZ_Factions"] = true;
  *
  * <Age: value1>  or  <Age: value1: value2>
  *   - Value1: Age to set (minimum defined in parameters)
- *   - Value2: Maximum Lifespan to set
+ *   - Value2: Maximum Lifespan to set (optional)
  *
  * <Type: target [IDs] value>
  *	 - Type: Friends or Romanced  (relations with actor(s) or 
@@ -108,7 +669,7 @@ Imported["LvMZ_Factions"] = true;
  *   <NPC>      - This will identify the event to use faction data.
  *
  * Alternatively you can use <NPC> or <NPC: anything-here> in the 
- * note field of the event.
+ * note field of the event - like <NPC: Fence> for shady shopkeepers.
  *
  * In addition, you can setup shop NPCs with initial adjustments 
  * to prices towards a peticular faction, race, relation, or title.
@@ -171,13 +732,10 @@ Imported["LvMZ_Factions"] = true;
  * Script Calls
  * ----------------------------------------------------------------------------
  *
- * Here are the following script calls that you can use in an event.
- * "this" refers to the interpreter so the function can hook to what 
- * actual function it needs (->  object.lvSet / object.lvGet), which 
- * you can use as well for a more direct method. (see further below)
- *
- * > "object" must be an actor ( ie. $gameParty.leader() )
- *   or an Event ( ie. $gameMap.event(id) )
+ * Here are the following script calls that you can use in a Script Branch.
+ * > "object" must be an actor or an event
+ *   Example Actor: $gameParty.leader()
+ *   Example Event: $gameMap.event(5)
  *
  * > "this" (without quotes) can be used in substitution of "object" 
  *   if the data you want to retrieve is from the event running the script.
@@ -352,6 +910,7 @@ Imported["LvMZ_Factions"] = true;
  * Changelog
  * ----------------------------------------------------------------------------
  *
+ * v2.0 - Final version (fixes and adjustments)
  * v1.9 - Adjusts/fixes a few age related functions
  * v1.8 - Quick fix (forgot defaultAge and defaultLife constants..)
  * v1.7 - Added reputation(aka the "Fame" system), Age and Lifespan
@@ -364,566 +923,6 @@ Imported["LvMZ_Factions"] = true;
  * v1.0 - Finished plugin
  *
  * ----------------------------------------------------------------------------
- *
- * @param -- Age Settings --
- * @default ----------------------------------
- *
- * @param minAge
- * @text Default-Min Age
- * @parent -- Age Settings --
- * @type number
- * @decimals 0
- * @min 1
- * @desc The lowest age an actor or NPC can go.
- * @default 15
- *
- * @param defaultAge
- * @text Starting Age
- * @parent -- Age Settings --
- * @type number
- * @decimals 0
- * @desc Default age an actor or NPC starts at. Minium and
- * maximum are defined by their parameters.
- * @default 18
- *
- * @param defaultLife
- * @text Default-Max Age
- * @parent -- Age Settings --
- * @type number
- * @decimals 0
- * @desc Default lifespan for NPC or actor.
- * This is the maximum possible age.
- * @default 85
- *
- * @param ageSelfVar
- * @text Age Variable
- * @parent -- Age Settings --
- * @type variable
- * @desc Variable ID to store Event age and lifespan
- * @default 0
- *
- * @param -- List Settings --
- * @default ----------------------------------
- *
- * @param FactionList
- * @text Faction Relations
- * @parent -- List Settings --
- * @type struct<Faction>[]
- * @desc List of possible factions. If the player is in one of 
- * these factions (or even the leader), they get discounts.
- * @default ["{\"Name\":\"Imperium\",\"RelationList\":\"[\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Imperium\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"10\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Nobles\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Guards\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Merchants\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Villagers\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Thieves Guild\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"-5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Pirates\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"-5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Nature\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"None\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\"]\",\"hiddenFac\":\"false\"}","{\"Name\":\"Nobles\",\"RelationList\":\"[\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Imperium\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Nobles\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Guards\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Merchants\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Villagers\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"-1\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Thieves Guild\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"-5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Pirates\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"-5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Nature\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"None\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\"]\",\"hiddenFac\":\"false\"}","{\"Name\":\"Guards\",\"RelationList\":\"[\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Imperium\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Nobles\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Guards\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Merchants\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Villagers\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Thieves Guild\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"-5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Pirates\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"-5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Nature\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"None\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\"]\",\"hiddenFac\":\"false\"}","{\"Name\":\"Merchants\",\"RelationList\":\"[\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Imperium\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Nobles\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Guards\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Merchants\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Villagers\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"1\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Thieves Guild\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"-5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Pirates\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"-5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Nature\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"None\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\"]\",\"hiddenFac\":\"false\"}","{\"Name\":\"Villagers\",\"RelationList\":\"[\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Imperium\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"-5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Nobles\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"-1\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Guards\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Merchants\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Villagers\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Thieves Guild\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"-5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Pirates\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"-5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Nature\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"None\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\"]\",\"hiddenFac\":\"false\"}","{\"Name\":\"Thieves Guild\",\"RelationList\":\"[\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Imperium\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"-5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Nobles\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Guards\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"-5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Merchants\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Villagers\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Thieves Guild\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Pirates\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Nature\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"None\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\"]\",\"hiddenFac\":\"true\"}","{\"Name\":\"Pirates\",\"RelationList\":\"[\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Imperium\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"-5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Nobles\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Guards\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"-5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Merchants\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Villagers\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Thieves Guild\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Pirates\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Nature\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"None\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\"]\",\"hiddenFac\":\"false\"}","{\"Name\":\"Nature\",\"RelationList\":\"[\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Imperium\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"-5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Nobles\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Guards\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Merchants\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Villagers\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Thieves Guild\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Pirates\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Nature\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"None\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\"]\",\"hiddenFac\":\"false\"}","{\"Name\":\"None\",\"RelationList\":\"[\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Imperium\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Nobles\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Guards\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Merchants\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Villagers\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Thieves Guild\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Pirates\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Nature\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"None\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\"]\",\"hiddenFac\":\"false\"}"]
- *
- * @param RaceList
- * @text Racial Relations
- * @parent -- List Settings --
- * @type struct<Race>[]
- * @desc List of Races and their relations with each other.
- * Compatable with ElementsStatesCore (VisuStella)
- * @default ["{\"Name\":\"Human\",\"RelationList\":\"[\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Human\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"High Elf\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Wood Elf\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Dark Elf\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"-5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Dwarf\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Gnome\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Halfling\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Wolfkin\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"-5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Felyne\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"-5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Lizardman\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"-5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Vampire\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\"]\",\"isMonster\":\"false\"}","{\"Name\":\"High Elf\",\"RelationList\":\"[\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Human\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"High Elf\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"10\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Wood Elf\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Dark Elf\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"-5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Dwarf\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"-5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Gnome\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Halfling\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Wolfkin\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Felyne\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Lizardman\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"-5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Vampire\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\"]\",\"isMonster\":\"false\"}","{\"Name\":\"Wood Elf\",\"RelationList\":\"[\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Human\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"-5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"High Elf\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Wood Elf\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Dark Elf\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"-5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Dwarf\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"-5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Gnome\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Halfling\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Wolfkin\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Felyne\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Lizardman\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"-5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Vampire\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\"]\",\"isMonster\":\"false\"}","{\"Name\":\"Dark Elf\",\"RelationList\":\"[\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Human\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"High Elf\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"-5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Wood Elf\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"-5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Dark Elf\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"10\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Dwarf\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Gnome\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Halfling\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Wolfkin\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Felyne\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Lizardman\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Vampire\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\"]\",\"isMonster\":\"false\"}","{\"Name\":\"Dwarf\",\"RelationList\":\"[\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Human\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"High Elf\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"-5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Wood Elf\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"-5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Dark Elf\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"-5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Dwarf\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"10\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Gnome\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Halfling\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Wolfkin\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Felyne\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Lizardman\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"-5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Vampire\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\"]\",\"isMonster\":\"false\"}","{\"Name\":\"Gnome\",\"RelationList\":\"[\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Human\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"High Elf\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Wood Elf\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Dark Elf\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Dwarf\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Gnome\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Halfling\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Wolfkin\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"-5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Felyne\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"-5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Lizardman\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"-5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Vampire\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\"]\",\"isMonster\":\"false\"}","{\"Name\":\"Halfling\",\"RelationList\":\"[\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Human\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"High Elf\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Wood Elf\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Dark Elf\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"-5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Dwarf\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Gnome\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Halfling\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Wolfkin\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Felyne\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Lizardman\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"-5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Vampire\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\"]\",\"isMonster\":\"false\"}","{\"Name\":\"Wolfkin\",\"RelationList\":\"[\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Human\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"-5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"High Elf\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Wood Elf\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Dark Elf\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Dwarf\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Gnome\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Halfling\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Wolfkin\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"10\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Felyne\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"-5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Lizardman\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Vampire\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\"]\",\"isMonster\":\"true\"}","{\"Name\":\"Felyne\",\"RelationList\":\"[\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Human\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"-5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"High Elf\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Wood Elf\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Dark Elf\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Dwarf\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Gnome\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Halfling\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Wolfkin\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"-5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Felyne\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"10\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Lizardman\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Vampire\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\"]\",\"isMonster\":\"true\"}","{\"Name\":\"Lizardman\",\"RelationList\":\"[\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Human\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"-5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"High Elf\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Wood Elf\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Dark Elf\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Dwarf\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"-5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Gnome\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"-5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Halfling\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Wolfkin\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Felyne\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"-5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Lizardman\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"15\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Vampire\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\"]\",\"isMonster\":\"true\"}","{\"Name\":\"Vampire\",\"RelationList\":\"[\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Human\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"High Elf\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Wood Elf\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Dark Elf\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Dwarf\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Gnome\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Halfling\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Wolfkin\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Felyne\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Lizardman\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Vampire\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\"]\",\"isMonster\":\"true\"}"]
- *
- * @param GenderList
- * @text Gender Relations
- * @parent -- List Settings --
- * @type struct<Gender>[]
- * @desc List of Genders and their relations with each other.
- * @default ["{\"Name\":\"Male\",\"GenderList\":\"[\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Male\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Female\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Both\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"None\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Other\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\"]\"}","{\"Name\":\"Female\",\"GenderList\":\"[\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Male\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Female\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Both\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"None\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Other\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\"]\"}","{\"Name\":\"Both\",\"GenderList\":\"[\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Male\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Female\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Both\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"None\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Other\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\"]\"}","{\"Name\":\"None\",\"GenderList\":\"[\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Male\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Female\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Both\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"None\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Other\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\"]\"}","{\"Name\":\"Other\",\"GenderList\":\"[\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Male\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Female\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Both\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"None\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Other\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\"]\"}"]
- *
- * @param ReputationList
- * @text Reputations
- * @parent -- List Settings --
- * @type struct<Reputation>[]
- * @desc List of reputations (famous/infamous) or possibly
- * heroic/villain, etc. Price adjustments available.
- * @default ["{\"Name\":\"Good\",\"MinValue\":\"26\",\"MaxValue\":\"100\",\"RelationList\":\"[\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Good\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Neutral\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Evil\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"-5\\\\\\\"}\\\"]\"}","{\"Name\":\"Neutral\",\"MinValue\":\"-25\",\"MaxValue\":\"25\",\"RelationList\":\"[\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Good\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Neutral\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Evil\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"-5\\\\\\\"}\\\"]\"}","{\"Name\":\"Evil\",\"MinValue\":\"-100\",\"MaxValue\":\"-26\",\"RelationList\":\"[\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Good\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"-5\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Neutral\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\",\\\"{\\\\\\\"Relation\\\\\\\":\\\\\\\"Evil\\\\\\\",\\\\\\\"Value\\\\\\\":\\\\\\\"0\\\\\\\"}\\\"]\"}"]
- *
- * @param RelationScale
- * @text Relationship Scale
- * @parent -- List Settings --
- * @type struct<Relationship>[]
- * @desc List of name and value of each relationship status.
- * From hostile to friendly, or otherwise defined by you!
- * @default ["{\"Name\":\"Best Friends\",\"MinValue\":\"91\",\"MaxValue\":\"100\",\"Value\":\"5\"}","{\"Name\":\"Great Friends\",\"MinValue\":\"75\",\"MaxValue\":\"90\",\"Value\":\"3\"}","{\"Name\":\"Friends\",\"MinValue\":\"50\",\"MaxValue\":\"74\",\"Value\":\"2\"}","{\"Name\":\"Acquaintances\",\"MinValue\":\"25\",\"MaxValue\":\"49\",\"Value\":\"1\"}","{\"Name\":\"Just Met\",\"MinValue\":\"6\",\"MaxValue\":\"24\",\"Value\":\"0\"}","{\"Name\":\"Unknown\",\"MinValue\":\"0\",\"MaxValue\":\"5\",\"Value\":\"0\"}","{\"Name\":\"Rivals\",\"MinValue\":\"-1\",\"MaxValue\":\"-5\",\"Value\":\"0\"}","{\"Name\":\"Frienemies\",\"MinValue\":\"-6\",\"MaxValue\":\"-25\",\"Value\":\"-1\"}","{\"Name\":\"Enemies\",\"MinValue\":\"-26\",\"MaxValue\":\"-85\",\"Value\":\"-3\"}","{\"Name\":\"Nemesis\",\"MinValue\":\"-86\",\"MaxValue\":\"-100\",\"Value\":\"-5\"}"]
- *
- * @param RomanceScale
- * @text Romanceable Scale
- * @parent -- List Settings --
- * @type struct<Relationship>[]
- * @desc List of name and value of each romance status.
- * From acquaintances to lovers, or otherwise defined.
- * @default ["{\Name\":\"Life Partners\",\"MinValue\":\"81\",\"MaxValue\":\"100\",\"Value\":\"5\"}","{\Name\":\"Lovers\",\"MinValue\":\"61\",\"MaxValue\":\"80\",\"Value\":\"3\"}","{\Name\":\"Courting\",\"MinValue\":\"41\",\"MaxValue\":\"60\",\"Value\":\"2\"}","{\Name\":\"Romantic Interests\",\"MinValue\":\"21\",\"MaxValue\":\"40\",\"Value\":\"1\"}","{\Name\":\"Acquaintances\",\"MinValue\":\"1\",\"MaxValue\":\"20\",\"Value\":\"0\"}"]
- *
- * @param TitleList
- * @text Title Relations
- * @parent -- List Settings --
- * @type struct<Title>[]
- * @desc List of titles
- * @default ["{\"Name\":\"Monarch\",\"Value\":\"100\"}","{\"Name\":\"Royal\",\"Value\":\"50\"}","{\"Name\":\"Heir\",\"Value\":\"25\"}","{\"Name\":\"Noble\",\"Value\":\"15\"}","{\"Name\":\"Knight\",\"Value\":\"5\"}","{\"Name\":\"Hero\",\"Value\":\"1\"}","{\"Name\":\"Criminal\",\"Value\":\"-5\"}"]
- *
- * @param AgeList
- * @text Age Relations
- * @parent -- List Settings --
- * @type struct<Age>[]
- * @desc List of Ages and value adjustments (LvMZ_Economy)
- * @default []
- *
- * @ --------------------------------------------------------------------------
- *
- * @command setFaction
- * @text Set Target Faction
- * @desc Sets a target to be part of a specific faction.
- *
- * @arg target
- * @text Target
- * @type select
- * @option Actor
- * @option Party
- * @option Event
- * @desc Choose an actor, event, or the whole party.
- * Setting to Party ignores targetId
- * @default Actor
- *
- * @arg targetId
- * @text Target ID
- * @type number
- * @decimals 0
- * @min 1
- * @max 999
- * @desc The player or event ID (player ID refers to order 
- * in the party menu: 1 = party leader).
- * @default 1
- *
- * @arg factionName
- * @text Choose Faction
- * @desc Faction name to be assigned.
- * Reminder: Case-Sensitive and the faction must exist!
- * @default 
- *
- * @arg leader
- * @text Set Leader
- * @type boolean
- * @on Leader
- * @off Member
- * @desc Set whether or not Target is the leader of the faction.
- * If PARTY, first member becomes leader.
- * @default false
- *
- * @ --------------------------------------------------------------------------
- *
- * @command leaveFaction
- * @text Leave Faction
- * @desc Clears target from any faction data.
- *
- * @arg target
- * @text Target
- * @type select
- * @option Actor
- * @option Party
- * @option Event
- * @desc Choose an actor, event, or the whole party.
- * Setting to Party ignores targetId
- * @default Actor
- *
- * @arg targetId
- * @text Target ID
- * @type number
- * @decimals 0
- * @min 1
- * @max 999
- * @desc The player or event ID (player ID refers to order 
- * in the party menu: 1 = party leader).
- * @default 1
- *
- * @ --------------------------------------------------------------------------
- *
- * @command facStatus
- * @text Set Faction Status
- * @desc Setting the hidden status of the target's faction.
- * Can also set for whole party (targetID is ignored)
- *
- * @arg target
- * @text Target Type
- * @type select
- * @option Actor
- * @option Party
- * @option Event
- * @desc Choose an actor, event, or the whole party.
- * NOTE: targetID ignored if using "Party"
- * @default Actor
- *
- * @arg targetId
- * @text Target ID
- * @type number
- * @decimals 0
- * @min 1
- * @max 999
- * @desc The player or event ID (player ID refers to order 
- * in the party menu: 1 = party leader).
- * @default 1
- *
- * @arg setStatus
- * @text Set Status
- * @type boolean
- * @on Hide
- * @off Reveal
- * @desc Do you with to hide or reveal the faction status for 
- * the target?
- * @default false
- *
- * @ --------------------------------------------------------------------------
- *
- * @command setRace
- * @text Set Target Race
- * @desc Sets a target to be a specific race.
- * Reminder: Case-Sensitive and the race must exist!
- *
- * @arg target
- * @text Target
- * @type select
- * @option Actor
- * @option Event
- * @desc Choose whether an actor or event gets this.
- * @default Actor
- *
- * @arg targetId
- * @text Target ID
- * @type number
- * @decimals 0
- * @min 1
- * @max 999
- * @desc The player or event ID (player ID refers to order 
- * in the party menu: 1 = party leader).
- * @default 1
- *
- * @arg raceName
- * @text Choose Race
- * @desc The name of the race to switch to. This will only 
- * work if NOT using VisuStella's ElementStatesCore!
- * @default 
- *
- * @ --------------------------------------------------------------------------
- *
- * @command setRelation
- * @text Change Relation
- * @desc Changes the relationship between Origin and Target.
- * See (instructions) for details.
- *
- * @arg source
- * @text Origin
- * @type select
- * @option Actor
- * @option Event
- * @desc Choose how (actor or event) feels about target.
- * @default Actor
- *
- * @arg sourceId
- * @text Origin ID
- * @desc Actor or Event ID of source object.
- * You may also use javascript (see Help)
- * @default this
- *
- * @arg target
- * @text Target
- * @type select
- * @option Actor
- * @option Event
- * @option Party
- * @desc Origin changes relation with a single actor, event,
- * or the entire actor party (see Help)
- * @default Event
- *
- * @arg targetId
- * @text Target ID
- * @desc Actor or Event ID of target object.
- * You may also use javascript (see Help)
- * @default this
- *
- * @arg mapId
- * @text Event Map ID
- * @desc Numerical(1-999) or Javascript; If getting an 
- * event from another map (see Help)
- * @default this
- *
- * @arg type
- * @text Relation Type
- * @type select
- * @option Friendship
- * @option Romance
- * @desc Choose the relation type to adjust
- * @default Friendship
- *
- * @arg value
- * @text Adjustment
- * @type number
- * @decimals 0
- * @min -9999
- * @max 9999
- * @desc How much to adjust the relationship between Origin 
- * has with Target.
- * @default 0
- *
- * @arg reset
- * @text Reset Relations
- * @type boolean
- * @on Reset
- * @off Default
- * @desc Resetting will return standing to 0 ignoring the value 
- * adjustment argument in this command.
- * @default false
- *
- * @ --------------------------------------------------------------------------
- *
- * @command setReputation
- * @text Change Reputation
- * @desc Alters the target's reputation
- *
- * @arg target
- * @text Target
- * @type select
- * @option Actor
- * @option Event
- * @desc Choose which one will get reputation adjustment.
- * @default Actor
- *
- * @arg targetId
- * @text Target ID
- * @type number
- * @decimals 0
- * @min 1
- * @max 999
- * @desc The player or event ID (player ID refers to order 
- * in the party menu: 1 = party leader).
- * @default 1
- *
- * @arg value
- * @text Adjusted Value
- * @type number
- * @min -9999
- * @max 9999
- * @desc The amount to add or subtract current actor's 
- * reputation value from. 0 does nothing
- * @default 0
- *
- * @ --------------------------------------------------------------------------
- *
- * @command addTitle
- * @text Add Title
- * @desc Gives the target a title! Can have multiple.
- * Reminder: Case-Sensitive and the title must exist!
- *
- * @arg target
- * @text Target
- * @type select
- * @option Actor
- * @option Party
- * @option Event
- * @desc Choose an actor, event, or the whole party.
- * NOTE: targetID ignored if using "Party"
- * @default Actor
- *
- * @arg targetId
- * @text Target ID
- * @type number
- * @decimals 0
- * @min 1
- * @max 999
- * @desc The player or event ID (player ID refers to order 
- * in the party menu: 1 = party leader).
- * @default 1
- *
- * @arg titleName
- * @text Choose Title
- * @desc The title to bestow.
- * Reminder: Case-Sensitive and the title must exist!
- * @default 
- *
- * @ --------------------------------------------------------------------------
- *
- * @command remTitle
- * @text Remove Title
- * @desc Remove an unwanted title
- *
- * @arg target
- * @text Target
- * @type select
- * @option Actor
- * @option Party
- * @option Event
- * @desc Choose an actor, event, or the whole party.
- * NOTE: targetID ignored if using "Party"
- * @default Actor
- *
- * @arg targetId
- * @text Target ID
- * @type number
- * @decimals 0
- * @min 1
- * @max 999
- * @desc The player or event ID (player ID refers to order 
- * in the party menu: 1 = party leader).
- * @default 1
- *
- * @arg titleName
- * @text Title Name
- * @desc The title by name.
- * NOTE: Case-Sensitive and must already exist on target.
- * @default 
- *
- * @ --------------------------------------------------------------------------
- *
- * @command clearTitles
- * @text Clear All Titles
- * @desc Removes ALL titles from target
- *
- * @arg target
- * @text Target
- * @type select
- * @option Actor
- * @option Party
- * @option Event
- * @desc Choose an actor, event, or the whole party.
- * NOTE: targetID ignored if using "Party"
- * @default Actor
- *
- * @arg targetId
- * @text Target ID
- * @type number
- * @decimals 0
- * @min 1
- * @max 999
- * @desc The player or event ID (player ID refers to order 
- * in the party menu: 1 = party leader).
- * @default 1
- *
- * @ --------------------------------------------------------------------------
- *
- * @command setGender
- * @text Set Target Gender
- * @desc Sets a target to be a specific gender.
- * Reminder: Case-Sensitive and the gender must exist!
- *
- * @arg target
- * @text Target
- * @type select
- * @option Actor
- * @option Event
- * @desc Choose whether an actor or event gets this.
- * @default Actor
- *
- * @arg targetId
- * @text Target ID
- * @type number
- * @decimals 0
- * @min 1
- * @max 999
- * @desc The player or event ID (player ID refers to order 
- * in the party menu: 1 = party leader).
- * @default 1
- *
- * @arg genderName
- * @text Choose Gender
- * @desc The name of the gender to switch to.
- * @default 
- *
- * @ --------------------------------------------------------------------------
- *
- * @command setAge
- * @text Set Target Age
- * @desc Adjusts the target age to <value>.
- * 
- * @arg target
- * @text Target
- * @type select
- * @option Actor
- * @option Event
- * @desc Choose actor or event to adjust age.
- * @default Actor
- *
- * @arg targetId
- * @text Target ID
- * @desc Actor or Event ID of target object.
- * You may also use javascript (see Help)
- * @default this
- *
- * @arg mapId
- * @text Event Map ID
- * @desc Numerical(1-999) or Javascript; If getting an 
- * event from another map (see Help)
- * @default this
- *
- * @arg value
- * @text Age
- * @type number
- * @decimals 0
- * @desc Min-Max determiend by plugin parameters and adjustments.
- * Default: Min(15), Age(18), Lifespan(85)
- * @default 0
- *
- * @arg lifespan
- * @text Max Lifespan Adjustment
- * @type number
- * @decimals 0
- * @min 0
- * @desc Number of years to add onto the defaultLife parameter.
- * Leave at 0 for no adjustment.
- * @default 0
- *
- * @ --------------------------------------------------------------------------
- *
- * @command resetAge
- * @text Reset Target Age
- * @desc Returns target age and lifespan to defaults.
- * 
- * @arg target
- * @text Target
- * @type select
- * @option Actor
- * @option Event
- * @desc Choose actor or event to adjust
- * @default Actor
- *
- * @arg targetId
- * @text Target ID
- * @desc Actor or Event ID of target object
- * You may also use javascript (see Help)
- * @default this
- *
- * @arg mapId
- * @text Event Map ID
- * @desc Numerical(1-999) or Javascript; If getting an 
- * event from another map (see Help)
- * @default this
- *
- * @ --------------------------------------------------------------------------
- *
- * @command setPriceAdjust
- * @text Set Price Adjustment
- * @desc Adjusts a price by percentage(%) from the merchant
- * (this event) towards the party leader.
- *
- * @arg type
- * @text Adjustment Type
- * @type select
- * @option Faction
- * @option Race
- * @option Gender
- * @option Reputation
- * @option Relation
- * @option Romance
- * @option Title
- * @option Age
- * @desc The adjustment value type to change.
- * Original values are not touched.
- * @default Faction
- *
- * @arg value
- * @text Adjustment Value
- * @type number
- * @decimals 0
- * @min -200
- * @max 200
- * @desc Adjust the percentage(%) value that the source
- * feels about the target. 0 Does nothing.
- * @default 0
  */
 // ============================================================================
 /*~struct~Faction:
@@ -1175,7 +1174,7 @@ var LvMZ = LvMZ || {};
 LvMZ.Factions = {
 	name: "Various Data for Actors and Events",
 	desc: "Database of functions dealing with: Factions, Races, Genders, Fame, Relations and Titles!",
-	version: 1.9
+	version: 2.0
 };
 
 // -- Global Variables --------------------------------------------------------
@@ -1184,20 +1183,19 @@ var $lvFactions = null;
 (() => {
 'use strict';
 
-const pluginName = "LvMZ_Factions";
-const params = new LvParams(pluginName);
-const absMinAge = params.value('minAge','num');
+const pluginName  = "LvMZ_Factions";
+const params      = new LvParams(pluginName);
+const absMinAge   = params.value('minAge','num');
 const defaultLife = params.value('defaultLife','num');
 if (defaultLife <= absMinAge) {// - Failsafe
 	throw new Error("Lifespan cannot be less than or equal to the Minimum Age!");
 }
-const defaultAge = params.value('defaultAge','num').clamp(absMinAge, defaultLife);
+const defaultAge  = params.value('defaultAge','num').clamp(absMinAge, defaultLife);
 const ageVariable = params.value('ageSelfVar','num');
 
 /******************************************************************************
 	plugin commands
 ******************************************************************************/
-//PluginManager.registerCommand(pluginName, '', args => {});
 PluginManager.registerCommand(pluginName, 'setFaction', args => {
 	const id = Number(args.targetId);
 	const isLeader = args.leader.toLowerCase() === "true";
@@ -1322,7 +1320,7 @@ PluginManager.registerCommand(pluginName, 'setRelation', args => {
 	} else {
 		const target = args.target === 'Actor'
 			? $gameActors.actor(tID)
-			: $gameMap.mapId() !== mapId
+			: $gameMap.mapId() === mapId
 			? new LvMZ_RemoteEvent(mapId, tID)
 			: $gameMap.event(tID);
 		this.chooseAction(source, target, args);
@@ -1331,7 +1329,7 @@ PluginManager.registerCommand(pluginName, 'setRelation', args => {
 // -- Private Function: setRelation -------------------------------------------
 PluginManager.chooseAction = function(source, target, args) {
 	// Set or Reset
-	const type = (args.reset.toLowerCase() === "true") ? "reset" : "set";
+	const type = args.reset.toLowerCase() === "true" ? "reset" : "set";
 	const myParams = [target];
 	if (type === "set") myParams.push(Number(args.value));
 	switch (args.type) {
@@ -1344,6 +1342,7 @@ PluginManager.chooseAction = function(source, target, args) {
 	}
 };
 
+// --
 PluginManager.registerCommand(pluginName, 'addTitle', args => {
 	const id = Number(args.targetId);
 	const name = args.titleName.replace(/[\\]*V\[(\d+)\]/gi, (_, p1) =>
@@ -1628,7 +1627,6 @@ Game_Event.prototype.meetsConditions = function(page) {
 	const c = page.conditions;
 	const sw = $dataSystem.switches;
 	const v = $dataSystem.variables;
-	const pc = $gameParty.leader();
 	let name = "";
 	if (c.switch1Valid) {
 		name = sw[c.switch1Id];
@@ -1646,7 +1644,8 @@ Game_Event.prototype.meetsConditions = function(page) {
 		name = v[c.variableId];
 		if (this._DLL && name.match(/\[(AGE|RELATION|ROMANCE|REPUTATION)\]/i)) {
 			let type = RegExp.$1.toLowerCase() + "Value";
-			if (this.lvGet(type, [pc]) < c.variableValue) {
+			let actor = $gameParty.leader();
+			if (this.lvGet(type, [actor]) < c.variableValue) {
 				return false;
 			}
 		} else if ($gameVariables.value(c.variableId) < c.variableValue) {
@@ -1680,7 +1679,7 @@ Game_Event.prototype.matchSwitchName = function(value) {
 	let source = false;
 	let target = false;
 	if (this._DLL && value.match(tagSw)) {
-		// now return if the player matches
+		// now return if the player matches event
 		const type = RegExp.$1.toLowerCase();
 		const name = RegExp.$2;
 		switch (type) {
@@ -1782,16 +1781,6 @@ Game_Event.prototype.loadDLL = function(page) {
 		this._DLL.lifespan = value ? Number(value.split(",")[1]) : defaultLife;
 	}
 	return this._DLL;
-};
-
-Game_Event.prototype.checkComment = function(noteTag, page) {
-	const list = page ? page.list : this.list();
-	for (const command of list) {
-		if (![108,408].contains(command.code)) continue;
-		const note = command.parameters[0];
-		if (note.match(noteTag)) return true;
-	}
-	return false;
 };
 
 Game_Event.prototype.updateAgeData = function(value) {
@@ -2405,7 +2394,7 @@ Game_Factions.prototype.relateList = function(data) {
 	for (const mapId of mapList) {
 		const evList = DataManager.map(mapId).events.filter(ev => !!ev);
 		for (const event of evList) {
-			let value = data[event.name];
+			let value = data[event.name()];
 			if (isNaN(value)) continue;
 			list.push({ id: [mapId, event.id], value: value });
 		}
