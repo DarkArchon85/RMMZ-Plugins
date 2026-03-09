@@ -11,7 +11,7 @@ Imported["LvMZ_Economy"] = true;
 
 /*:
  * @target MZ
- * @plugindesc [v1.9] Gives life to the world and its merchants by varying up
+ * @plugindesc [v1.91] Gives life to the world and its merchants by varying up
  * their prices based on several factors (including relations and supply).
  * @author LordValinar
  * @url https://github.com/DarkArchon85/RMMZ-Plugins
@@ -473,7 +473,7 @@ Imported["LvMZ_Economy"] = true;
  *   includes having multiple types of shops on the same NPC (such as a 
  *   shady merchant with 'special' stock?)
  *
- * - As of version 2.0, a Sold Item icon is added to help identify which
+ * - As of version 1.9, a Sold Item icon is added to help identify which
  *   items are player-sold.
  *
  * In addition, there are also "Regions" which can represent different 
@@ -652,6 +652,8 @@ Imported["LvMZ_Economy"] = true;
  * Changelog
  * ----------------------------------------------------------------------------
  *
+ * v1.91 - Hotfix (S&D object wasn't to LvMZ_Core 1.5 standards)
+ *
  * v1.9 - Added Sold Item icon and updated for LvMZ_Core v1.5
  
  * v1.8 - Added a separate tracker for stolen gold and a method to clean it 
@@ -787,7 +789,7 @@ var LvMZ = LvMZ || {};
 LvMZ.Economy = {
 	name: "Economy",
 	desc: "Adds shop gold and other enhancements!",
-	version: 1.9
+	version: 1.91
 };
 
 (() => {
@@ -811,7 +813,7 @@ const shopFunds    = params.value('ShopFunds','num');
 const variance     = params.value('ShopVariance','num');
 const soldItemIcon = params.value('soldIcon','num');
 // - Supply & Demand -
-const SnD          = params.value('supplyDemand','obj');
+const SnD          = params.object('supplyDemand');
 const minSupply    = Number(SnD.supplyMin);
 const maxSupply    = Number(SnD.supplyMax);
 const offSupply    = Number(SnD.supplyOffset);
