@@ -86,18 +86,22 @@ Imported["LvMZ_Economy"] = true;
  * @param setBuyPrice
  * @text Buy Price
  * @type number
- * @decimals 2
+ * @decimals 0
+ * @min 0
+ * @max 100
  * @desc The percentage(%) of an item, weapon, or armor price
  * listed in the Database when buying.
- * @default 100.00
+ * @default 100
  *
  * @param setSellPrice
  * @text Sell Price
  * @type number
- * @decimals 2
+ * @decimals 0
+ * @min 0
+ * @max 100
  * @desc The percentage(%) of an item, weapon, or armor price
  * listed in the Database when selling.
- * @default 50.00
+ * @default 50
  *
  * @param markUp
  * @text Price Markup
