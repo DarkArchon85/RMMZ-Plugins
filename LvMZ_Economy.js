@@ -11,7 +11,7 @@ Imported["LvMZ_Economy"] = true;
 
 /*:
  * @target MZ
- * @plugindesc [v1.91] Gives life to the world and its merchants by varying up
+ * @plugindesc [v2.0] Gives life to the world and its merchants by varying up
  * their prices based on several factors (including relations and supply).
  * @author LordValinar
  * @url https://github.com/DarkArchon85/RMMZ-Plugins
@@ -652,6 +652,11 @@ Imported["LvMZ_Economy"] = true;
  * Changelog
  * ----------------------------------------------------------------------------
  *
+ * v2.0(Final) - added "You:" text for party gold in shop menu
+ *      - Fixed another S&D object that wasn't to LvMZ_Core standards
+ *      - Corrected the percentage for adjustment rate to match 
+ *        the plugin settings.
+ *
  * v1.91 - Hotfix (S&D object wasn't to LvMZ_Core 1.5 standards)
  *
  * v1.9 - Added Sold Item icon and updated for LvMZ_Core v1.5
@@ -721,7 +726,7 @@ Imported["LvMZ_Economy"] = true;
  * @max 100
  * @desc Amount (percentage) to adjust prices for rarer or 
  * more common items (positive number only).
- * @default 1
+ * @default 100
  *
  * @param -- Regions --
  *
@@ -789,7 +794,7 @@ var LvMZ = LvMZ || {};
 LvMZ.Economy = {
 	name: "Economy",
 	desc: "Adds shop gold and other enhancements!",
-	version: 1.91
+	version: 2.0
 };
 
 (() => {
@@ -1330,12 +1335,6 @@ Game_Map.prototype.recoverStolenItems = function() {
 
 
 // --- GAME EVENT ---
-const gameEv_initMembers = Game_Event.prototype.initMembers;
-Game_Event.prototype.initMembers = function() {
-	gameEv_initMembers.call(this);
-	this.clearShop();
-};
-
 const gameEv_clear = Game_Event.prototype.clearPageSettings;
 Game_Event.prototype.clearPageSettings = function() {
 	gameEv_clear.call(this);
@@ -1396,7 +1395,7 @@ Game_Event.prototype.initShopSettings = function() {
 				case 'armor': shop._count[2] = [min,max]; break;
 			}
 		} else if (note.match(tagINF)) {
-			shop.setItemCount(255, 255, 255);
+			shop.setItemCount(255,255,255);
 		} else if (note.match(tBuyStolen) && stolenMerch == 'Varies') {
 			shop._buysStolen = true;
 		} else if (note.match(tagFUNDS) && shop._money === 0) {
@@ -1411,6 +1410,7 @@ Game_Event.prototype.initShopSettings = function() {
 	}
 	// Finish initialization (manual refresh call required from here on)
 	shop._needsRefresh = true;
+	this.saveShopData(shop);
 };
 
 Game_Event.prototype.isShop = function() {
@@ -1441,15 +1441,10 @@ Game_Event.prototype.switchShops = function(id) {
 	if (!this.isShop() || this._shopId === id) return;	
 	// First, store current data 
 	const shop = this.shopData();
-	this._shopData[this._shopId] = {
-		items:  shop._goods,
-		prices: shop._costs,
-		num:    shop._stock,
-		count:  shop._count,
-		gold:   shop._money
-	};
+	this.saveShopData(shop);
+	// Second, change Shop ID
 	this._shopId = id;
-	// check for existing data - switch over if present
+	// Then check for existing data - switch over if present
 	const sData = this._shopData[id];
 	if (sData) {
 		shop._goods = sData.items;
@@ -1460,6 +1455,16 @@ Game_Event.prototype.switchShops = function(id) {
 	} else { // otherwise - reset
 		shop.refresh();
 	}
+};
+
+Game_Event.prototype.saveShopData = function(shop) {
+	this._shopData[this._shopId] = {
+		items:  shop._goods,
+		prices: shop._costs,
+		num:    shop._stock,
+		count:  shop._count,
+		gold:   shop._money
+	};
 };
 
 
@@ -1533,17 +1538,11 @@ Game_Interpreter.prototype.retrieveCache = function() {
 
 
 // --- LVMZ REMOTE_EVENT (LvMZ_Core) ---
-const lvmzEv_setupEv = LvMZ_RemoteEvent.prototype.setupRemoteEvent;
-LvMZ_RemoteEvent.prototype.setupRemoteEvent = function() {
-	lvmzEv_setupEv.call(this);
+const lvRemoteEv_setup = LvMZ_RemoteEvent.prototype.setupPageSettings;
+LvMZ_RemoteEvent.prototype.setupPageSettings = function() {
+	lvRemoteEv_setup.call(this);
 	this.checkIsShop();
 	this.initShopSettings();
-};
-
-const lvmzEv_clearEv = LvMZ_RemoteEvent.prototype.clearRemoteEvent;
-LvMZ_RemoteEvent.prototype.clearRemoteEvent = function() {
-	lvmzEv_clearEv.call(this);
-	this.clearShop();
 };
 
 /******************************************************************************
@@ -1805,6 +1804,7 @@ Window_Gold.prototype.refresh = function() {
 	const unit = this.currencyUnit();
 	this.contents.clear();
 	this.resetTextColor();
+	this.drawText("You:", rect.x, rect.y, rect.width);
 	this.drawNewGoldValue(this.value(), unit, rect.x, rect.y, rect.width);
 };
 
@@ -2104,7 +2104,7 @@ LvMZ_Shop.prototype.initSupply = function(data) {
 	if (!data) {
 		// loads from plugin parameters
 		const params = new LvParams("LvMZ_Economy");
-		const SnD = params.value('supplyDemand','obj');
+		const SnD = params.object('supplyDemand');
 		this._supplyMin = Number(SnD.supplyMin);
 		this._supplyMax = Number(SnD.supplyMax);
 		this._supplyOffset = Number(SnD.supplyOffset);
@@ -2269,7 +2269,7 @@ LvMZ_Shop.prototype.itemType = function(item) {
 LvMZ_Shop.prototype.checkPrice = function(item) {
 	if (!item) return false;
 	if (Imported["LvMZ_Currencies"]) {
-		const note = item.note;
+		const note = item.note || "";
 		const tagID = /<ALTCURRENCY:\s(VAR||ITEM||WEAPON||ARMOR)\s(\d+)\s(BUY||SELL)\s(\d+)>/gi;
 		const tagNAME = /<ALTCURRENCY:\s(ITEM||WEAPON||ARMOR)\s([^>]*)\s(BUY||SELL)\s(\d+)>/gi;
 		if (note.match(tagID) || note.match(tagNAME) || item.clone) {
@@ -2312,7 +2312,7 @@ LvMZ_Shop.prototype.sOffset = function() {
 };
 
 LvMZ_Shop.prototype.sAdjust = function() {
-	return this._supplyAdjust || 0;
+	return this._supplyAdjust || 0);
 };
 
 
@@ -2427,7 +2427,7 @@ function supplyCheck(index) {
 	const min = shop.sMin();
 	const max = shop.sMax();
 	const os  = shop.sOffset();
-	const rate = shop.sAdjust();
+	const rate = (shop.sAdjust() / 100).percent();
 	let adjust = 0;
 	if (stock < min) {
 		adjust = Math.floor((min - stock) / os) * rate;
