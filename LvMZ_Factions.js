@@ -1320,7 +1320,7 @@ PluginManager.registerCommand(pluginName, 'setRelation', args => {
 	} else {
 		const target = args.target === 'Actor'
 			? $gameActors.actor(tID)
-			: $gameMap.mapId() === mapId
+			: $gameMap.mapId() !== mapId
 			? new LvMZ_RemoteEvent(mapId, tID)
 			: $gameMap.event(tID);
 		this.chooseAction(source, target, args);
