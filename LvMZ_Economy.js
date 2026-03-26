@@ -663,7 +663,9 @@ Imported["LvMZ_Economy"] = true;
  * Changelog
  * ----------------------------------------------------------------------------
  *
- * v2.0(Final) - added "You:" text for party gold in shop menu
+ * v2.1 - Final : reverted S&D rate value and code cleanup
+ *
+ * v2.0 - added "You:" text for party gold in shop menu
  *      - Fixed another S&D object that wasn't to LvMZ_Core standards
  *
  * v1.91 - Hotfix (S&D object wasn't to LvMZ_Core 1.5 standards)
