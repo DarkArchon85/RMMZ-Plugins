@@ -1185,7 +1185,7 @@ function validEventId(x, y) {
  *      NOTE: arguments[2] can be used as "true" or "false"
  *    - strL: When the parameter is a string to convert to Lower Case
  *    - strU: When the parameter is a string to convert to Upper Case
- *    - %:    When the parameter is a number with decimals
+ *    - %:    Converts parameter to percentage (value / 100).percent()
  *      NOTE: arguments[2] and arguments[3] are for min/max values
  *   default: Returns the parameter text unchanged
  *
