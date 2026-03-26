@@ -1,17 +1,26 @@
 // ============================================================================
-//  LordValinar Plugin - Various Data for Actors and Events
+//  LordValinar Plugin - Character Functions Library(CFL)
 //  LvMZ_Factions.js
 // ============================================================================
 
-var Imported = Imported || {};
-if (!Imported["LvMZ_Core"]) {
-	throw new Error("LvMZ_Factions requires plugin 'LvMZ_Core'!");
+// -- Global Variables --------------------------------------------------------
+var LvMZ = LvMZ || {};
+if (!LvMZ.Core || LvMZ.Core.version < 1.5) {
+	throw new Error("LvMZ_Core version 1.5 or later required!");
 }
+LvMZ.Factions = {
+	name: "Character Function Library",
+	desc: "Database of functions dealing with: Factions, Races, Genders, Fame, Relations and Titles!",
+	version: 2.1
+};
+var Imported = Imported || {};
 Imported["LvMZ_Factions"] = true;
+// -- Other
+var $lvFactions = null;
 
 /*:
  * @target MZ
- * @plugindesc [v2.0] Core Plugin - Required for other plugins interacting
+ * @plugindesc [v2.1] Core Plugin - Required for other plugins interacting
  * with factions, relationship, genders or titles (ex: LvMZ_Economy.js)
  * @author LordValinar
  * @url https://github.com/DarkArchon85/RMMZ-Plugins
@@ -667,9 +676,7 @@ Imported["LvMZ_Factions"] = true;
  * Create a comment and setup the tags as above; however, unlike
  * actors, you will require 1 more tag BEFORE calling the others:
  *   <NPC>      - This will identify the event to use faction data.
- *
- * Alternatively you can use <NPC> or <NPC: anything-here> in the 
- * note field of the event - like <NPC: Fence> for shady shopkeepers.
+ *   <NPC: John> or <NPC: Shopkeeper> also works (see below)
  *
  * In addition, you can setup shop NPCs with initial adjustments 
  * to prices towards a peticular faction, race, relation, or title.
@@ -677,9 +684,9 @@ Imported["LvMZ_Factions"] = true;
  *     Type: Faction | Gender | Race | Reputation | Relation | Title | Age
  *     Name: Name of the type(above) that exists in the parameters.
  *     Amount: -100 to 100 to adjust current values
- *   Example: If current relations with High Elves is 5% and you 
- *   want to increase it to 10% you would use:
- *   <Init Race: High Elf 5>
+ *   Example: If current relations with High Elves is 5% by default
+ *   in the plugin parameters, and you want to increase it to 10%, 
+ *   then you would use: <Init Race: High Elf 5>
  * 
  *
  * -- Using Plugin Commands --
@@ -701,11 +708,11 @@ Imported["LvMZ_Factions"] = true;
  *     from the current or other maps. If you use "this" for the 
  *     player, it will get the party leader. If you use "this" for 
  *     an event, it will get the currently running event.
- *     You can also use syntax (\V[#] and \A[#]) for a variable 
+ *     You can also use syntax (\\V[#] and \\A[#]) for a variable 
  *     value or actor ID based on position like normal.
  *
  *   MapID: You can use "this" for current map, javascript (using 
- *     \V[#] or \A[#] like above), or any other number which will 
+ *     \\V[#] or \\A[#] like above), or any other number which will 
  *     be clamped between 1 and 999 (normal map limits).
  *
  *   Value: By adjusting up (positive numbers) or down (negative), 
@@ -720,11 +727,11 @@ Imported["LvMZ_Factions"] = true;
  * >> Using Variables For Names
  *   For the 5 plugin commands: Set Faction, Set Race, Set Gender, 
  *     Add Title and Remove Title, you can substitute the faction names 
- *     with a variable. (Example: \v[13])
+ *     with a variable. (Example: \\v[13])
  *
  *   Keep in mind however, that the rules on formatting applies to the 
  *     variable value as well. So if you have variable 13 = "Human"
- *     when calling \v[13] for Set Race, then it will be correct where 
+ *     when calling \\v[13] for Set Race, then it will be correct where 
  *     as variable 13 = "Highelf" will be incorrect (unless of course 
  *     you have a race with "Highelf" as the name).
  *
@@ -776,7 +783,7 @@ Imported["LvMZ_Factions"] = true;
  *  actor.lvSet('setFaction', [name, isLeader]);
  *
  * 'setFaction':  The method name (Game_Factions.prototype.setFaction)
- * [name,..]:     The name of the faction ("Villagers")
+ * [name,..]:     The name of the faction (ex: "Villagers")
  * [..,isLeader]: Boolean to set if actor is leader of said faction.
  * 
  * Here is the complete list of methodNames and their parameter types:
@@ -910,7 +917,8 @@ Imported["LvMZ_Factions"] = true;
  * Changelog
  * ----------------------------------------------------------------------------
  *
- * v2.0 - Final version (fixes and adjustments)
+ * v2.1 - Final (updates map events' age data if applicable)
+ * v2.0 - Various fixes and adjustments
  * v1.9 - Adjusts/fixes a few age related functions
  * v1.8 - Quick fix (forgot defaultAge and defaultLife constants..)
  * v1.7 - Added reputation(aka the "Fame" system), Age and Lifespan
@@ -922,7 +930,6 @@ Imported["LvMZ_Factions"] = true;
  * v1.1 - Added gender-related list, script calls, and plugin commands
  * v1.0 - Finished plugin
  *
- * ----------------------------------------------------------------------------
  */
 // ============================================================================
 /*~struct~Faction:
@@ -1170,16 +1177,6 @@ Imported["LvMZ_Factions"] = true;
  */
 // ============================================================================
 
-var LvMZ = LvMZ || {};
-LvMZ.Factions = {
-	name: "Various Data for Actors and Events",
-	desc: "Database of functions dealing with: Factions, Races, Genders, Fame, Relations and Titles!",
-	version: 2.0
-};
-
-// -- Global Variables --------------------------------------------------------
-var $lvFactions = null;
-
 (() => {
 'use strict';
 
@@ -1422,10 +1419,10 @@ PluginManager.registerCommand(pluginName, 'setAge', args => {
 		: $gameMap.mapId() !== mapId
 		? new LvMZ_RemoteEvent(mapId, tID)
 		: $gameMap.event(tID);
-	if (!target._DLL) return;
+	if (!target._CFL) return;
 	const lifeAdjust = Number(args.lifespan);
 	if (lifeAdjust > 0) {
-		target._DLL.lifespan = target.lvGet('maxLife') + lifeAdjust;
+		target._CFL.lifespan = target.lvGet('maxLife') + lifeAdjust;
 	}
 	target.lvSet('setAge', [Number(args.value)]);
 });
@@ -1445,9 +1442,9 @@ PluginManager.registerCommand(pluginName, 'resetAge', args => {
 		: $gameMap.mapId() !== mapId
 		? new LvMZ_RemoteEvent(mapId, tID)
 		: $gameMap.event(tID);
-	if (!target._DLL) return;
-	target._DLL.age = defaultAge;
-	target._DLL.lifespan = defaultLife;
+	if (!target._CFL) return;
+	target._CFL.age = defaultAge;
+	target._CFL.lifespan = defaultLife;
 	if (target.updateAgeData) {// For NPC Events 
 		target.updateAgeData(defaultAge);
 	}
@@ -1456,7 +1453,7 @@ PluginManager.registerCommand(pluginName, 'resetAge', args => {
 PluginManager.registerCommand(pluginName, 'setPriceAdjust', args => {
 	// Failsafe - the source event must be an interactable NPC!
 	const source = MapManager.event();
-	if (!source._DLL) return;
+	if (!source._CFL) return;
 	// Passed - Adjust as normal
 	const target = $gameParty.leader();
 	const type = args.type.toLowerCase();
@@ -1516,7 +1513,7 @@ Game_Actor.prototype.setup = function(actorId) {
 
 Game_Actor.prototype.initFactionSettings = function() {
 	// check actor notetags for pre-setup factions, races, and titles
-	this._DLL = DataManager.initData();
+	this._CFL = DataManager.initData();
 	const facTag = /<(FACTION|RACE|TITLE|GENDER)[: ]+([^>]+)>[: ]*(LEADER)?/i;
 	const frsTag = /<(FRIENDS|ROMANCED)[: ]+(ACTOR|EVENT)[ ]?\[([\d, ]+)\][ ]?(\d+)>[ ]?(\d+)?/i;
 	const repTag = /<(?:FAME|REPUTATION)[: ]+(\d+)>/i;
@@ -1563,7 +1560,7 @@ Game_Actor.prototype.initFactionSettings = function() {
 		} else if (meta.match(ageTag)) {
 			let limit = RegExp.$2 ? Number(RegExp.$2) : 0;
 			if (limit > 0) {
-				this._DLL.lifespan = Math.floor(limit);
+				this._CFL.lifespan = Math.floor(limit);
 			}
 			this.lvSet('setAge', [Number(RegExp.$1)]);
 		}
@@ -1571,7 +1568,7 @@ Game_Actor.prototype.initFactionSettings = function() {
 };
 
 Game_Actor.prototype.lvSet = function(methodName, params) {
-	if (!$lvFactions || !this._DLL) return;
+	if (!$lvFactions || !this._CFL) return;
 	if (typeof $lvFactions[methodName] === 'function') {
 		switch (methodName) {
 			case 'setFaction': 			case 'setRelation':
@@ -1592,7 +1589,7 @@ Game_Actor.prototype.lvSet = function(methodName, params) {
 }
 
 Game_Actor.prototype.lvGet = function(methodName, params) {
-	if (!$lvFactions || !this._DLL) return null;
+	if (!$lvFactions || !this._CFL) return null;
 	if (typeof $lvFactions[methodName] === 'function') {
 		switch (methodName) {
 			case 'factionLeader': 	case 'relationValue':
@@ -1617,12 +1614,12 @@ Game_Actor.prototype.lvGet = function(methodName, params) {
 const gameEvent_clearPage = Game_Event.prototype.clearPageSettings;
 Game_Event.prototype.clearPageSettings = function() {
 	gameEvent_clearPage.call(this);
-	this._DLL = null;
+	this._CFL = null;
 };
 
 // Overwrite - Includes this plugin's library functions and data
 Game_Event.prototype.meetsConditions = function(page) {
-	this._DLL = this.loadDLL(page);
+	this._CFL = this.loadLibrary(page);
 	// --
 	const c = page.conditions;
 	const sw = $dataSystem.switches;
@@ -1642,7 +1639,7 @@ Game_Event.prototype.meetsConditions = function(page) {
 	}
 	if (c.variableValid) {
 		name = v[c.variableId];
-		if (this._DLL && name.match(/\[(AGE|RELATION|ROMANCE|REPUTATION)\]/i)) {
+		if (this._CFL && name.match(/\[(AGE|RELATION|ROMANCE|REPUTATION)\]/i)) {
 			let type = RegExp.$1.toLowerCase() + "Value";
 			let actor = $gameParty.leader();
 			if (this.lvGet(type, [actor]) < c.variableValue) {
@@ -1678,7 +1675,7 @@ Game_Event.prototype.matchSwitchName = function(value) {
 	const tagSw = /\[(FACTION|RACE|GENDER|REPUTATION|RELATION|ROMANCE|TITLE)\](.*)/i;
 	let source = false;
 	let target = false;
-	if (this._DLL && value.match(tagSw)) {
+	if (this._CFL && value.match(tagSw)) {
 		// now return if the player matches event
 		const type = RegExp.$1.toLowerCase();
 		const name = RegExp.$2;
@@ -1716,17 +1713,17 @@ Game_Event.prototype.matchSwitchName = function(value) {
 	return source && target;
 };
 
-Game_Event.prototype.loadDLL = function(page) {
+Game_Event.prototype.loadLibrary = function(page) {
 	const noteTag = /<(FACTION|RACE|GENDER|TITLE)[: ]+([^>]+)>[: ]*(LEADER)?/i;
 	const setupTag = /<INIT[: ]+(FACTION|RACE|GENDER|REPUTATION|TITLE)[: ]+([^:>]*)[: ]+(\d+)>/i;
 	const frsTag = /<(FRIENDS|ROMANCED)[: ]+(ACTOR|EVENT)[ ]?\[([\d, ]+)\][ ]?(\d+)>[ ]?(\d+)?/i;
 	const repTag = /<(?:FAME|REPUTATION)[: ]+(\d+)>/i;
-	this._DLL = null;
+	this._CFL = null;
 	if (this.checkComment(/<NPC[: >]?/i, page)) {
-		this._DLL = DataManager.initData();
+		this._CFL = DataManager.initData();
 		this.initPricePlus();
 	}
-	if (this._DLL) {
+	if (this._CFL) {
 		for (const command of page.list) {
 			if (![108,408].contains(command.code)) continue;
 			const note = command.parameters[0];
@@ -1777,14 +1774,14 @@ Game_Event.prototype.loadDLL = function(page) {
 		// Restore Age and Lifespan (stored by Self Variables: LvMZ_Core)
 		const key = [this._mapId, this._eventId, "SelfVar", ageVariable];
 		const value = $gameSelfVar.value(key);
-		this._DLL.age = value ? Number(value.split(",")[0]) : defaultAge;
-		this._DLL.lifespan = value ? Number(value.split(",")[1]) : defaultLife;
+		this._CFL.age = value ? Number(value.split(",")[0]) : defaultAge;
+		this._CFL.lifespan = value ? Number(value.split(",")[1]) : defaultLife;
 	}
-	return this._DLL;
+	return this._CFL;
 };
 
 Game_Event.prototype.updateAgeData = function(value) {
-	if (!this._DLL) return;
+	if (!this._CFL) return;
 	const key = [this._mapId, this._eventId, "SelfVar", ageVariable];
 	const maxLifespan = this.lvGet('maxLife');
 	if (value <= maxLifespan || maxLifespan === -1) {
@@ -1797,20 +1794,20 @@ Game_Event.prototype.updateAgeData = function(value) {
 
 // -- PRICE PLUS: Adjusts merchant prices without modifying original data
 Game_Event.prototype.initPricePlus = function() {
-	if (!this._DLL) return;
-	this._DLL.priceAdjust = {};
+	if (!this._CFL) return;
+	this._CFL.priceAdjust = {};
 	const data = ["faction","race","gender","reputation","relation","romance","title","age"];
 	for (const type of data) {
-		this._DLL.priceAdjust[type] = {};
+		this._CFL.priceAdjust[type] = {};
 		const list = $lvFactions.nameList(type);
 		for (const name of list) {
-			this._DLL.priceAdjust[type][name] = 0;
+			this._CFL.priceAdjust[type][name] = 0;
 		}
 	}
 };
 
 Game_Event.prototype.lvSet = function(methodName, params) {
-	if (!$lvFactions || !this._DLL) return;
+	if (!$lvFactions || !this._CFL) return;
 	if (typeof $lvFactions[methodName] === 'function') {
 		switch (methodName) {
 			case 'setPriceAdjust':		case 'setFaction': 
@@ -1830,7 +1827,7 @@ Game_Event.prototype.lvSet = function(methodName, params) {
 }
 
 Game_Event.prototype.lvGet = function(methodName, params) {
-	if (!$lvFactions || !this._DLL) return null;
+	if (!$lvFactions || !this._CFL) return null;
 	if (typeof $lvFactions[methodName] === 'function') {
 		switch (methodName) {
 			case 'priceAdjust':		case 'factionLeader': 
@@ -2116,26 +2113,26 @@ Game_Factions.prototype.initAgeData = function() {
 // Faction Methods: Everything to do with factions only
 
 Game_Factions.prototype.leaveFaction = function(object) {
-	object._DLL.faction = "";
-	object._DLL.factionLeader = false;
+	object._CFL.faction = "";
+	object._CFL.factionLeader = false;
 	$gameMap.requestRefresh();
 };
 
 Game_Factions.prototype.setFaction = function(object, name, isLeader) {
 	if (this.nameList('faction').includes(name)) {
-		object._DLL.faction = name;
-		object._DLL.factionLeader = Boolean(isLeader);
+		object._CFL.faction = name;
+		object._CFL.factionLeader = Boolean(isLeader);
 		$gameMap.requestRefresh();
 	}
 };
 
 Game_Factions.prototype.factionLeader = function(object, name) {
-	if (this.curFaction(object) !== name) return false;
 	if (!this.factionValid(object)) {
-		// Invalid faction - set leader to false
-		object._DLL.factionLeader = false;
+		object._CFL.faction = "";
+		object._CFL.factionLeader = false;
 	}
-	return object._DLL.factionLeader;
+	const faction = this.curFaction(object);
+	return faction === name ? object._CFL.factionLeader : false;
 };
 
 Game_Factions.prototype.setHiddenFaction = function(object, value) {
@@ -2162,7 +2159,7 @@ Game_Factions.prototype.factionValid = function(object, faction="") {
 };
 
 Game_Factions.prototype.curFaction = function(object) {
-	return object._DLL.faction || "None";
+	return object._CFL.faction || "None";
 };
 
 // --- Direct calls (not usd in lvGet or lvSet)
@@ -2187,16 +2184,16 @@ Game_Factions.prototype.removeFaction = function(name) {
 	// Cycles through all actors - Remove from this faction
 	for (const actor of $gameParty.allMembers()) {
 		if (this.curFaction(actor) === name) {
-			actor._DLL.faction = "";
-			actor._DLL.factionLeader = false;
+			actor._CFL.faction = "";
+			actor._CFL.factionLeader = false;
 		}
 	}
 	// Cycle through all current map events - Remove from this faction
 	for (const event of $gameMap.events()) {
-		if (!event._DLL) continue;
+		if (!event._CFL) continue;
 		if (this.curFaction(event) === name) {
-			event._DLL.faction = "";
-			event._DLL.factionLeader = false;
+			event._CFL.faction = "";
+			event._CFL.factionLeader = false;
 		}
 	}
 	// Remove this faction from the Data and List
@@ -2219,8 +2216,7 @@ Game_Factions.prototype.setFactionVsPrice = function(source, target, value) {
 
 Game_Factions.prototype.setRace = function(object, name) {
 	// VisuStella's methods have priority
-	// - If using ElementStatusCore, use VisuMZ's plugin 
-	//   commands instead.
+	// - If using ElementStatusCore, use VisuMZ's plugin commands instead.
 	if (this.checkVisuMZ(object)) {
 		if ($gameTemp.isPlaytest()) {
 			alert("VisuMZ ElementStatusCore in use - use their plugin commands");
@@ -2228,7 +2224,7 @@ Game_Factions.prototype.setRace = function(object, name) {
 		return;
 	}
 	if (this.nameList('race').includes(name)) {
-		object._DLL.race = name;
+		object._CFL.race = name;
 		$gameMap.requestRefresh();
 	}
 };
@@ -2255,7 +2251,7 @@ Game_Factions.prototype.race = function(object) {
 	if (this.checkVisuMZ(object)) {
 		return object.getTraitSet('Race');
 	}
-	return object._DLL.race || "";
+	return object._CFL.race || "";
 };
 
 Game_Factions.prototype.raceValid = function(object) {
@@ -2286,7 +2282,7 @@ Game_Factions.prototype.setGender = function(object, name) {
 		return;
 	}
 	if (this.nameList('gender').includes(name)) {
-		object._DLL.gender = name;
+		object._CFL.gender = name;
 		$gameMap.requestRefresh();
 	}
 };
@@ -2295,7 +2291,7 @@ Game_Factions.prototype.gender = function(object) {
 	if (this.checkVisuMZ(object)) {
 		return object.getTraitSet('Gender');
 	}
-	return object._DLL.gender || "";
+	return object._CFL.gender || "";
 };
 
 Game_Factions.prototype.genderValid = function(object) {
@@ -2318,19 +2314,19 @@ Game_Factions.prototype.setGenderVsPrice = function(source, target, value) {
 Game_Factions.prototype.setRelation = function(source, target, value) {
 	if (source === target) return; // can't befriend yourself..
 	const name = target.name();
-	const cv = source._DLL.relations[name] || 0;
+	const cv = source._CFL.relations[name] || 0;
 	const min = this.min('relation');
 	const max = this.max('relation');
-	source._DLL.relations[name] = (cv + value).clamp(min, max);
-	if (source._DLL.relations[name] === 0) {
-		delete source._DLL.relations[name];
+	source._CFL.relations[name] = (cv + value).clamp(min, max);
+	if (source._CFL.relations[name] === 0) {
+		delete source._CFL.relations[name];
 	}
 	$gameMap.requestRefresh();
 };
 
 Game_Factions.prototype.relationValue = function(source, target) {
 	if (source === target) return 0;
-	return source._DLL.relations[target.name()] || 0;
+	return source._CFL.relations[target.name()] || 0;
 };
 
 Game_Factions.prototype.relationName = function(source, target) {
@@ -2341,26 +2337,26 @@ Game_Factions.prototype.relationName = function(source, target) {
 };
 
 Game_Factions.prototype.resetRelation = function(source, target) {
-	delete source._DLL.relations[target.name()];
+	delete source._CFL.relations[target.name()];
 	$gameMap.requestRefresh();
 };
 
 Game_Factions.prototype.setRomance = function(source, target, value) {
 	if (source === target) return; // can't romance yourself..
 	const name = target.name();
-	const cv = source._DLL.romances[name] || 0;
+	const cv = source._CFL.romances[name] || 0;
 	const min = this.min('romance');
 	const max = this.max('romance');
-	source._DLL.romances[name] = (cv + value).clamp(min, max);
-	if (source._DLL.romances[name] === 0) {
-		delete source._DLL.romances[name];
+	source._CFL.romances[name] = (cv + value).clamp(min, max);
+	if (source._CFL.romances[name] === 0) {
+		delete source._CFL.romances[name];
 	}
 	$gameMap.requestRefresh();
 };
 
 Game_Factions.prototype.romanceValue = function(source, target) {
 	if (source === target) return 0;
-	return source._DLL.romances[target.name()] || 0;
+	return source._CFL.romances[target.name()] || 0;
 };
 
 Game_Factions.prototype.romanceName = function(source, target) {
@@ -2371,16 +2367,16 @@ Game_Factions.prototype.romanceName = function(source, target) {
 };
 
 Game_Factions.prototype.resetRomance = function(source, target) {
-	delete source._DLL.romances[target.name()];
+	delete source._CFL.romances[target.name()];
 	$gameMap.requestRefresh();
 };
 
 Game_Factions.prototype.friends = function(source) {
-	return this.relateList(source._DLL.relations);
+	return this.relateList(source._CFL.relations);
 };
 
 Game_Factions.prototype.romanced = function(source) {
-	return this.relateList(source._DLL.romances);
+	return this.relateList(source._CFL.romances);
 };
 
 Game_Factions.prototype.relateList = function(data) {
@@ -2410,7 +2406,7 @@ Game_Factions.prototype.setReputation = function(object, value) {
 		const cv = this.reputationValue(object);
 		const min = this.min('reputation');
 		const max = this.max('reputation');
-		object._DLL.reputation = (cv + value).clamp(min, max);
+		object._CFL.reputation = (cv + value).clamp(min, max);
 		$gameMap.requestRefresh();
 	}
 };
@@ -2422,7 +2418,7 @@ Game_Factions.prototype.reputationName = function(object) {
 };
 
 Game_Factions.prototype.reputationValue = function(object) {
-	return object._DLL.reputation || 0;
+	return object._CFL.reputation || 0;
 };
 
 Game_Factions.prototype.reputationValid = function(object) {
@@ -2443,58 +2439,58 @@ Game_Factions.prototype.setReputationVsPrice = function(source, target, value) {
 // Title Methods: Everything to do with titles 
 
 Game_Factions.prototype.firstTitle = function(object) {
-	object._DLL.titleIndex = 0;
-	return object._DLL.titles[0] || "None";
+	object._CFL.titleIndex = 0;
+	return object._CFL.titles[0] || "None";
 };
 
 Game_Factions.prototype.nextTitle = function(object) {
-	const index = ++object._DLL.titleIndex;
-	const maxLength = object._DLL.titles.length;
+	const index = ++object._CFL.titleIndex;
+	const maxLength = object._CFL.titles.length;
 	if (index >= maxLength) {
-		object._DLL.titleIndex = -1;
+		object._CFL.titleIndex = -1;
 		return "None"; // end of list
 	}
-	return object._DLL.titles[index] || "None";
+	return object._CFL.titles[index] || "None";
 };
 
 Game_Factions.prototype.prevTitle = function(object) {
-	const index = --object._DLL.titleIndex;
+	const index = --object._CFL.titleIndex;
 	if (index < 0) {
-		object._DLL.titleIndex = -1;
+		object._CFL.titleIndex = -1;
 		return "None"; // end of list
 	}
-	return object._DLL.titles[index] || "None";
+	return object._CFL.titles[index] || "None";
 };
 
 Game_Factions.prototype.lastTitle = function(object) {
-	const index = object._DLL.titles.length - 1;
-	object._DLL.titleIndex = index;
-	return object._DLL.titles[index] || "None";
+	const index = object._CFL.titles.length - 1;
+	object._CFL.titleIndex = index;
+	return object._CFL.titles[index] || "None";
 };
 
 Game_Factions.prototype.addTitle = function(object, name) {
 	if (!this.nameList('title').includes(name)) return;
 	if (this.checkTitle(object, name)) return;
-	object._DLL.titles.push(name);
+	object._CFL.titles.push(name);
 	$gameMap.requestRefresh();
 };
 
 Game_Factions.prototype.removeTitle = function(object, name) {
 	if (!this.checkTitle(object, name)) return;
-	if (object._DLL.titleIndex >= 0) object._DLL.titleIndex--;
-	const index = object._DLL.titles.indexOf(name);
-	object._DLL.titles.splice(index, 1);
+	if (object._CFL.titleIndex >= 0) object._CFL.titleIndex--;
+	const index = object._CFL.titles.indexOf(name);
+	object._CFL.titles.splice(index, 1);
 	$gameMap.requestRefresh();
 };
 
 Game_Factions.prototype.clearTitles = function(object) {
-	object._DLL.titles = [];
-	object._DLL.titleIndex = -1;
+	object._CFL.titles = [];
+	object._CFL.titleIndex = -1;
 	$gameMap.requestRefresh();
 };
 
 Game_Factions.prototype.checkTitle = function(object, name) {
-	return object._DLL.titles.includes(name);
+	return object._CFL.titles.includes(name);
 };
 
 // ----------------------------------------------------------------------------
@@ -2509,22 +2505,22 @@ Game_Factions.prototype.defaultLife = function() {
 };
 
 Game_Factions.prototype.maxLife = function(object) {
-	return object._DLL.lifespan;
+	return object._CFL.lifespan;
 };
 
 Game_Factions.prototype.ageValue = function(object) {
-	return object._DLL.age;
+	return object._CFL.age;
 };
 
 Game_Factions.prototype.setLife = function(object, value) {
-	object._DLL.lifespan = Math.floor(value);
-	if (object.updateAgeData) object.updateAgeData(object._DLL.age);
+	object._CFL.lifespan = Math.floor(value);
+	if (object.updateAgeData) object.updateAgeData(object._CFL.age);
 	if (object.checkAge) object.checkAge();
 };
 
 Game_Factions.prototype.setAge = function(object, value) {
 	const newValue = Math.max(this._minAge, Math.floor(value));
-	object._DLL.age = newValue;
+	object._CFL.age = newValue;
 	if (object.updateAgeData) object.updateAgeData(newValue);
 	if (object.checkAge) object.checkAge();
 };
@@ -2547,7 +2543,7 @@ Game_Factions.prototype.ageAllEvents = function(value) {
 	for (const mapId of maps) {
 		const events = MapManager.simulateEvents(mapId);
 		for (const event of events) {
-			if (!event._DLL) continue;
+			if (!event._CFL) continue;
 			let newValue = this.ageValue(event) + value;
 			this.setAge(event, newValue);
 		}
@@ -2573,7 +2569,7 @@ if (Imported["LvMZ_TimeSystem"]) {
 Game_Factions.prototype.setPriceAdjust = function(source, name, type, value) {
 	if (source instanceof Game_Event && this.nameList(type).includes(name)) {
 		const price = Number(value).clamp(-200,200); // failsafe
-		source._DLL.priceAdjust[type][name] = Math.floor(price);
+		source._CFL.priceAdjust[type][name] = Math.floor(price);
 	}
 };
 
@@ -2592,7 +2588,7 @@ Game_Factions.prototype.priceAdjust = function(source, target, type) {
 
 Game_Factions.prototype.pricePlus = function(source, type, name) {
 	if (source instanceof Game_Event) {
-		const price = source._DLL.priceAdjust[type.toLowerCase()];
+		const price = source._CFL.priceAdjust[type.toLowerCase()];
 		return price ? price[name] || 0 : 0;
 	}
 	return 0;
