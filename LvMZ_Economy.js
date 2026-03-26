@@ -3,15 +3,22 @@
 //  LvMZ_Economy.js
 // ============================================================================
 
-var Imported = Imported || {};
-if (!Imported['LvMZ_Core']) {
-	throw new Error("LvMZ_Economy requires plugin 'LvMZ_Core'!");
+// -- Global Variables --------------------------------------------------------
+var LvMZ = LvMZ || {};
+if (!LvMZ.Core || LvMZ.Core.version < 1.5) {
+	throw new Error("LvMZ_Core version 1.5 or later required!");
 }
+LvMZ.Economy = {
+	name: "Economy",
+	desc: "Adds shop gold and other enhancements!",
+	version: 2.1
+};
+var Imported = Imported || {};
 Imported["LvMZ_Economy"] = true;
 
 /*:
  * @target MZ
- * @plugindesc [v2.0] Gives life to the world and its merchants by varying up
+ * @plugindesc [v2.1] Gives life to the world and its merchants by varying up
  * their prices based on several factors (including relations and supply).
  * @author LordValinar
  * @url https://github.com/DarkArchon85/RMMZ-Plugins
@@ -728,7 +735,7 @@ Imported["LvMZ_Economy"] = true;
  * @max 100
  * @desc Amount (percentage) to adjust prices for rarer or 
  * more common items (positive number only).
- * @default 100
+ * @default 1
  *
  * @param -- Regions --
  *
@@ -791,13 +798,6 @@ Imported["LvMZ_Economy"] = true;
  * @default 0
  */
 // ============================================================================
-
-var LvMZ = LvMZ || {};
-LvMZ.Economy = {
-	name: "Economy",
-	desc: "Adds shop gold and other enhancements!",
-	version: 2.0
-};
 
 (() => {
 "use strict";
@@ -868,8 +868,7 @@ PluginManager.registerCommand(pluginName, 'removeDemand', args => {
 
 PluginManager.registerCommand(pluginName, 'stealItem', args => {
 	const item = itemGroup(args.type, Number(args.itemId));
-	const amount = Number(args.value);
-	$gameParty.stealItem(item, amount);
+	$gameParty.stealItem(item, Number(args.value));
 });
 
 PluginManager.registerCommand(pluginName, 'stealGold', args => {
@@ -879,9 +878,9 @@ PluginManager.registerCommand(pluginName, 'stealGold', args => {
 PluginManager.registerCommand(pluginName, 'resetStolen', $gameMap.recoverStolenItems());
 
 PluginManager.registerCommand(pluginName, 'changeShop', args => {
-	const id = Number(args.shopId);
-	const ev = MapManager.event();
-	if (ev) ev.switchShops(id);
+	const shopId = Number(args.shopId);
+	const event = MapManager.event();
+	if (event) event.switchShops(shopId);
 });
 
 PluginManager.registerCommand(pluginName, 'shopGold', args => {
@@ -900,8 +899,7 @@ PluginManager.registerCommand(pluginName, 'shopItem', args => {
 	const shop = mapData ? mapData[eventId] : null;
 	if (shop) {
 		const item = itemGroup(args.type, Number(args.id));
-		const amount = Number(args.num);
-		shop.addGoods(item, amount);
+		shop.addGoods(item, Number(args.num));
 	}
 });
 
@@ -968,11 +966,11 @@ Game_System.prototype.addRegion = function(region, rate, categories) {
 };
 
 Game_System.prototype.initDemands = function(categories) {
-	return categories.reduce((r,c) => {
+	return categories.reduce((r,v) => {
 		r.push({
-			name: c.name.toLowerCase(),
-			rate: c.rate ? Number(c.rate) : 0,
-			adj: c.adj ? Number(c.adj) : 0
+			name: v.name.toLowerCase(),
+			rate: v.rate ? Number(v.rate) : 0,
+			adj: v.adj ? Number(v.adj) : 0
 		});
 		return r;
 	},[]);
@@ -1074,8 +1072,7 @@ Game_Party.prototype.initialize = function() {
 
 const gameParty_gold = Game_Party.prototype.gold;
 Game_Party.prototype.gold = function() {
-	const value = gameParty_gold.call(this);
-	return value + this._stolenGold;
+	return this._stolenGold + gameParty_gold.call(this);
 };
 
 const gameParty_gainItem = Game_Party.prototype.gainItem;
@@ -2429,7 +2426,7 @@ function supplyCheck(index) {
 	const min = shop.sMin();
 	const max = shop.sMax();
 	const os  = shop.sOffset();
-	const rate = (shop.sAdjust() / 100).percent();
+	const rate = shop.sAdjust();
 	let adjust = 0;
 	if (stock < min) {
 		adjust = Math.floor((min - stock) / os) * rate;
