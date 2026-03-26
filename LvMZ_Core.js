@@ -3,8 +3,18 @@
 //  LvMZ_Core.js
 // ============================================================================
 
+// -- Global Variables --------------------------------------------------------
+var LvMZ = {};
+LvMZ.Core = {
+	name: "LvMZ_Core",
+	desc: "Core functionality and quality of life settings.",
+	version: 1.6
+};
 var Imported = Imported || {};
 Imported["LvMZ_Core"] = true;
+// -- Other
+var $advisor = null;
+var $gameSelfVar = null;
 
 //-----------------------------------------------------------------------------
 //  JsExtensions
@@ -216,12 +226,12 @@ LvParams.prototype.percent = function(key, min = -1, max = 1) {
 	return (Number(this._data[key]) / 100).percent(Number(min), Number(max));
 };
 
-LvParams.prototype.parseSE = function(obj) {
+LvParams.prototype.parseSE = function(object) {
 	return {
-		name:   obj.name || "",
-		pan:    Number(obj.pan || 0).clamp(-100, 100),
-		pitch:  Number(obj.pitch || 100).clamp(50, 150),
-		volume: Number(obj.volume || 90).clamp(0, 100)
+		name:   object.name || "",
+		pan:    Number(object.pan || 0).clamp(-100, 100),
+		pitch:  Number(object.pitch || 100).clamp(50, 150),
+		volume: Number(object.volume || 90).clamp(0, 100)
 	};
 };
 
@@ -397,7 +407,7 @@ function LvDebug() {
 LvDebug._timers = {};
 
 LvDebug.add = function(id, message, wait=60) {
-	if (!this._timers[id]) {
+	if (!this._timers[id] && debugMode) {
 		this._timers[id] = Math.max(wait, 0);
 		console.log(message);
 	}
@@ -442,22 +452,16 @@ LvMZ_RemoteEvent.prototype.event = function() {
 	return DataManager.map(this._mapId).events[this._eventId];
 };
 
-LvMZ_RemoteEvent.prototype.refresh = function() {
-	this._pageIndex = this._erased ? -1 : this.findProperPageIndex();
-	if (this._pageIndex >= 0) {
-		this.setupRemoteEvent();
-	} else {
-		this.clearRemoteEvent();
-	}
+LvMZ_RemoteEvent.prototype.updateSelfMovement = function() {
+	//: Disabled - no movement
 };
 
-// -- Methods to be aliased, adding additional functionality
-LvMZ_RemoteEvent.prototype.setupRemoteEvent = function() {
-	this.initName();	
+LvMZ_RemoteEvent.prototype.checkEventTriggerAuto = function() {
+	//: Disabled - prevents auto-triggers
 };
 
-LvMZ_RemoteEvent.prototype.clearRemoteEvent = function() {
-	this.setName("");
+LvMZ_RemoteEvent.prototype.updateParallel = function() {
+	//: Disabled - no parallel processing
 };
 
 //-----------------------------------------------------------------------------
@@ -528,6 +532,18 @@ function itemGroup(type, id) {
 }
 
 /**
+ * Returns item type
+ *
+ * @memberof LvCore
+ * @param {object} item - Database item object
+ * @returns {string} Basic item class
+ */
+function itemType(item) {
+	const object = new Game_Item(item);
+	return (object._dataClass || "").toLowerCase();
+}
+
+/**
  * Check an object's note field for a specific regex 
  *
  * @memberof LvCore
@@ -559,7 +575,7 @@ function validEventId(x, y) {
 
 /*:
  * @target MZ
- * @plugindesc [v1.5] Core functionality and quality of life settings.
+ * @plugindesc [v1.6] Core functionality and quality of life settings.
  * @author LordValinar
  * @url https://github.com/DarkArchon85/RMMZ-Plugins
  *
@@ -854,6 +870,20 @@ function validEventId(x, y) {
  * See Help(usage); LvMZ_Core(settings)
  * @default true
  *
+ * @ --------------------------------------------------------------------------
+ *
+ * @command skipIntro
+ * @text Skip Title Scene
+ * @desc Toggle going to title screen or map scene
+ *
+ * @arg value
+ * @text Skip Title Toggle
+ * @type boolean
+ * @on Remove Title Screen
+ * @off Keep Default
+ * @desc Skips the title and splash screen.
+ * @default false
+ *
  *
  * @help
  * ----------------------------------------------------------------------------
@@ -878,19 +908,15 @@ function validEventId(x, y) {
  *
  * Debug Mode: Turned OFF by default, but if you want to use LvMZ_Core
  * for debugging messages in your own plugins, you can use the following
- * script call:
- *
- *  LvDebug.add(id, message, wait);
- *   - ID: Any value really, unique to each debugging messages to prevent
- *         overlap and keep them organized.
- *   - Message: This is the console message you want displayed (F8)
- *   - Wait: How many frames in delay before this debug command(by ID) can
- *         work again? Helpful in preventing spammed debugging in loops.
- *         Default value if unused is 60 frames.
+ * script call:  LvDebug.add(id, message, wait=60) {}; 
+ *  - See further down for more details in the LvDebug section
  *
  * Remove Title Screen: Turn this ON if you want to skip directly to 
  * Scene_Map (maybe using a map for title screen, or you want a title in 
  * later, etc.
+ *  - v1.6 adds option to dynamically turn this on/off with both a 
+ *    plugin command and script call: $gameSystem.setSkipTitle(value);
+ *     value{boolean}:  true | false 
  *
  * Permanent Actor Death: If turned ON, then when an Actor perishes in 
  * combat, they are removed from the party entirely. However, there are 
@@ -1098,7 +1124,7 @@ function validEventId(x, y) {
  *   for (const mapId of maps) {
  *     const list = MapManager.simulateEvents(mapId);
  *     for (const event of list) {
- *       console.log(event.name);
+ *       // check or modify your events with code here
  *     }
  *   }
  *
@@ -1129,6 +1155,7 @@ function validEventId(x, y) {
  *    - strL: When the parameter is a string to convert to Lower Case
  *    - strU: When the parameter is a string to convert to Upper Case
  *    - %:    When the parameter is a number with decimals
+ *      NOTE: arguments[2] and arguments[3] are for min/max values
  *   default: Returns the parameter text unchanged
  *
  *
@@ -1214,6 +1241,15 @@ function validEventId(x, y) {
  *   plugin).
  * 
  *
+ * ===== LvMZ_RemoteEvent ===== 
+ *
+ * This is a Game_Event object to load event data from another map.
+ * It disables Autorun, parallel processing, and movements to prevent 
+ * issues. Nothing to really alias or do, just create the object like
+ * you would with any other event (just use a mapId that is not on the 
+ * same one as the player already is).
+ *
+ *
  * ===== LOCAL FUNCTIONS =====
  *
  * DataManager.map = function(mapId) {};
@@ -1276,10 +1312,15 @@ function validEventId(x, y) {
  *     or not "false"(without quotes) = Below[0] or Above[2].
  *
  *
+ * Game_Event.prototype.initName = function() {};
+ *
+ *   Retrieves an event's name; First by checking the event notetag, 
+ *   then current page's comments, finally the name field itself.
+ *
+ *
  * Game_Event.prototype.name = function() {};
  *
- *   Checks for the event name, first by notetag, then comment, and finally
- *   loads it from the map data.
+ *   Checks for the event name assigned first by initName();
  *
  *
  * Game_Event.prototype.setName = function(name) {};
@@ -1290,7 +1331,8 @@ function validEventId(x, y) {
  * Game_Event.prototype.objectId = function(pageIndex = false) {};
  *
  *   Returns an array of event data. By default comes with the Map ID
- *   and Event ID. Set pageIndex to true to get the pageIndex as well.
+ *   and Event ID. 
+ *   OPTIONAL: Set pageIndex to true to get the pageIndex as well.
  *
  *
  * Game_Interpreter.prototype.actor = function(index=0) {};
@@ -1334,6 +1376,8 @@ function validEventId(x, y) {
  * Changelog
  * ----------------------------------------------------------------------------
  *
+ * v1.6 - Added Game_System function to toggle the Skip Intro setting,
+ *        and fixed LvMZ_RemoteEvent disabling autorun events and movement
  * v1.5 - Major fix needed (function preventing Graphics initialization),
  *        plus added some new functions (ie $gamePlayer.activateEventXy)
  *        and did some more code cleanup
@@ -1431,18 +1475,6 @@ function validEventId(x, y) {
  */
 // ============================================================================
 
-var LvMZ = {};
-LvMZ.Core = {
-	name: "LvMZ_Core",
-	desc: "Core functionality and quality of life settings.",
-	version: 1.5
-};
-
-// -- Global Variables --
-var $advisor = null;
-var $gameSelfVar = null;
-
-
 (() => {
 'use strict';
 
@@ -1450,7 +1482,6 @@ const pluginName  = "LvMZ_Core";
 const params      = new LvParams(pluginName);
 const startDir    = params.value('startDir');
 const debugMode   = params.value('debugMode','bool');
-const skipTitle   = params.value('removeTitle','bool');
 const permaDeath  = params.value('permaDeath','bool');
 const maxLvCtrl   = params.value('maxLevelControl','bool');
 const levelCap    = params.value('maxLevel','num');
@@ -1496,6 +1527,11 @@ PluginManager.registerCommand(pluginName, 'selfSwitchAll', args => {
 PluginManager.registerCommand(pluginName, 'setAdvisor', args => {
 	const value = args.value.toLowerCase() === "true";
 	$advisor.setActive(value);
+});
+
+PluginManager.registerCommand(pluginName, 'skipIntro', args => {
+	const value = args.value.toLowerCase() === "true";
+	$gameSystem.setSkipTitle(value);
 });
 
 /******************************************************************************
@@ -1611,7 +1647,7 @@ BattleManager.checkPermaDeath = function() {
 			continue;
 		}
 		// All others will be permanently removed from the party
-		$gameParty.removeActor(battler.actorId());
+		$gameParty.removeActor(actor.id);
 	}
 };
 
@@ -1631,6 +1667,22 @@ Game_Temp.prototype.random = function(value1, value2) {
 	const min = Math.ceil(Number(value1));
 	const max = Math.floor(Number(value2));
 	return ~~(Math.random() * (max - min + 1) + min);
+};
+
+
+// --- GAME SYSTEM ------------------------------------------------------------
+const gameSys_init = Game_System.prototype.initialize;
+Game_System.prototype.initialize = function() {
+	gameSys_init.call(this);
+	this._skipTitle = params.value('removeTitle','bool');
+};
+
+Game_System.prototype.setSkipTitle = function(value) {
+	this._skipTitle = value;
+};
+
+Game_System.prototype.skipTitle = function() {
+	return !!this._skipTitle;
 };
 
 
@@ -1752,9 +1804,9 @@ Game_Actor.prototype.changeEquip = function(slotId, item) {
 	}
 	if (oldItem && autoItem) {
 		if (!this.equips()[slotId]) { // unequip
-			if (oldItem != autoItem) $gameParty.gainItem(autoItem, 1);
+			if (oldItem !== autoItem) $gameParty.gainItem(autoItem, 1);
 			this.changeEquip(slotId, autoItem);
-		} else { // swapping equips
+		} else if (oldItem === autoItem) { // swapping equips
 			$gameParty.loseItem(oldItem, 1);
 		}
 	}
@@ -1880,9 +1932,11 @@ Game_Player.prototype.executeMove = function(direction) {
 	}
 };
 
-Game_Player.prototype.executeTurn = function(direction) {
-	if (!this.isMoving() && this.canMove() && useDirMove && this.direction() !== direction) {
-		this.setDirection(direction);
+Game_Player.prototype.executeTurn = function(newDirection) {
+	if (!useDirMove) { this._turnCount = 0; return false; }
+	const d = this.direction();
+	if (!this.isMoving() && this.canMove() && d !== newDirection) {
+		this.setDirection(newDirection);
 		this._turnCount = useDirDelay;
 		return true;
 	}
@@ -1898,27 +1952,26 @@ Game_Player.prototype.frontY = function() {
 };
 
 Game_Player.prototype.extendActivate = function(length = 1) {
-	if (this.canStartLocalEvents()) {
-		const d = this.direction();
-		let x = $gameMap.roundXWithDirection(this.x, d);
-		let y = $gameMap.roundYWithDirection(this.y, d);
-		while (--length >= 0) {
-			// Failsafe (check if out of bounds)
-			let x1 = $gameMap.roundXWithDirection(x, d);
-			let y1 = $gameMap.roundYWithDirection(y, d);
-			if (!$gameMap.isValid(x1, y1)) {
-				if ($gameTemp.isPlaytest()) {
-					console.log("ERROR: Out of Bounds! $gamePlayer.extendActivate");
-					console.log(" - X: " + x1 + " , Y: " + y1 + " , Length: " + length);
-					console.log(" - Returning previous position: " + x + "," + y);
-				}
-				break;
+	const d = this.direction();
+	let x = $gameMap.roundXWithDirection(this.x, d);
+	let y = $gameMap.roundYWithDirection(this.y, d);
+	while (--length >= 0) {
+		// Failsafe (check if out of bounds)
+		let x1 = $gameMap.roundXWithDirection(x, d);
+		let y1 = $gameMap.roundYWithDirection(y, d);
+		if (!$gameMap.isValid(x1, y1)) {
+			if ($gameTemp.isPlaytest()) {
+				console.log("ERROR: Out of Bounds! $gamePlayer.extendActivate");
+				console.log(" - X: " + x1 + " , Y: " + y1 + " , Length: " + length);
+				console.log(" - Returning previous position: " + x + "," + y);
 			}
+			break;
+		} else {
 			x = x1;
 			y = y1;
 		}
-		this.startMapEvent(x, y, [0,1,2], true);
 	}
+	this.activateEventXy(x, y);
 };
 
 Game_Player.prototype.activateEventXy = function(x, y, normal = true) {
@@ -1996,7 +2049,7 @@ Game_Interpreter.prototype.command353 = function() {
 // Return to Title Screen
 const gameIntr_command354 = Game_Interpreter.prototype.command354;
 Game_Interpreter.prototype.command354 = function() {
-	if (skipTitle) {
+	if ($gameSystem.skipTitle()) {
 		SceneManager._scene.fadeOutAll();
 		DataManager.setupNewGame();
 		SceneManager.goto(Scene_Map);
@@ -2175,7 +2228,7 @@ Scene_Base.prototype.checkGameover = function() {
 // --- SCENE BOOT -------------------------------------------------------------
 const sceneBoot_startNormalGame = Scene_Boot.prototype.startNormalGame;
 Scene_Boot.prototype.startNormalGame = function() {
-	if (skipTitle) {
+	if ($gameSystem.skipTitle()) {
 		this.checkPlayerLocation();
 		DataManager.setupNewGame();
 		SceneManager.goto(Scene_Map);
@@ -2188,7 +2241,7 @@ Scene_Boot.prototype.startNormalGame = function() {
 // --- SCENE GAME_END ---------------------------------------------------------
 const sceneGameEnd_commandToTitle = Scene_GameEnd.prototype.commandToTitle;
 Scene_GameEnd.prototype.commandToTitle = function() {
-	if (skipTitle) {
+	if ($gameSystem.skipTitle()) {
 		this.fadeOutAll();
 		DataManager.setupNewGame();
 		SceneManager.goto(Scene_Map);
@@ -2201,7 +2254,7 @@ Scene_GameEnd.prototype.commandToTitle = function() {
 // --- SCENE GAMEOVER ---------------------------------------------------------
 const sceneGameOver_gotoTitle = Scene_Gameover.prototype.gotoTitle;
 Scene_Gameover.prototype.gotoTitle = function() {
-	if (skipTitle) {
+	if ($gameSystem.skipTitle()) {
 		this.fadeOutAll();
 		DataManager.setupNewGame();
 		SceneManager.goto(Scene_Map);
