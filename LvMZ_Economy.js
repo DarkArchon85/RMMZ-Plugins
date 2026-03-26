@@ -1537,15 +1537,6 @@ Game_Interpreter.prototype.retrieveCache = function() {
 	delete $gameParty._contraband[this._mapId][this._eventId];
 };
 
-
-// --- LVMZ REMOTE_EVENT (LvMZ_Core) ---
-const lvRemoteEv_setup = LvMZ_RemoteEvent.prototype.setupPageSettings;
-LvMZ_RemoteEvent.prototype.setupPageSettings = function() {
-	lvRemoteEv_setup.call(this);
-	this.checkIsShop();
-	this.initShopSettings();
-};
-
 /******************************************************************************
 	rmmv_scenes.js
 ******************************************************************************/
