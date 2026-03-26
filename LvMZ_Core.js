@@ -926,11 +926,11 @@ function validEventId(x, y) {
  * Starting Direction (default: Down): Which direction do you want the 
  * player character to start facing? Normally RPG Maker has you start
  * facing Down, but you might want the party leader facing East after
- * a intro cutscene?
+ * an intro cutscene?
  *
  * Debug Mode: Turned OFF by default, but if you want to use LvMZ_Core
  * for debugging messages in your own plugins, you can use the following
- * script call:  LvDebug.add(id, message, wait=60) {}; 
+ * script call:  LvDebug.add(id, message, wait=60);
  *  - See further down for more details in the LvDebug section
  *
  * Remove Title Screen: Turn this ON if you want to skip directly to 
@@ -1094,6 +1094,15 @@ function validEventId(x, y) {
  *   This function gets your database object based on TYPE and ID
  *   Example: item = itemGroup("Item", 5);
  *   Eaxmple: invalid = itemGroup("Variable", 1);
+ *
+ *
+ * function itemType(item) {}
+ *
+ *   This function uses the Game_Item class to turn a data object
+ *   into its basic string type:
+ *   Example: $dataItems[itemId] = "item"
+ *   Example: $dataWeapons[itemId] = "weapon"
+ *   Example: $dataArmors[itemId] = "armor"
  *
  *
  * function validEventId(x, y) {};
