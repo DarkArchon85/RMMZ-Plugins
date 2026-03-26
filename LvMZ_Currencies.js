@@ -3,15 +3,56 @@
 //  LvMZ_Currencies.js
 // ============================================================================
 
-var Imported = Imported || {};
-if (!Imported['LvMZ_Core']) {
-	throw new Error("LvMZ_Currencies requires plugin 'LvMZ_Core'!");
+// --- Global Variables -------------------------------------------------------
+var LvMZ = LvMZ || {};
+if (!LvMZ.Core || LvMZ.Core.version < 1.5) {
+	throw new Error("LvMZ_Core version 1.5 or later required!");
 }
+LvMZ.Currencies = {
+	name: "Alternate Currencies",
+	desc: "Buy or sell with items, weapons, armors, or variables!",
+	version: 1.4,
+	curMode: null
+};
+var Imported = Imported || {};
 Imported["LvMZ_Currencies"] = true;
+
+
+// -- Public Functions --------------------------------------------------------
+
+// convertPrice: Converts a standard item pricing (via Database) and 
+// compares it with any notetags (ex: <Unit:#>) and then returns 
+// it in a base number format (lowest currency)
+function convertPrice(price, item) {
+	if (DataManager.currencies().length > 0) {
+		const params = new LvParams('LvMZ_Currencies');
+		const defUnit = params.value('defUnit','num');
+		const unitId = item && item.meta.Unit ? Number(item.meta.Unit) : defUnit;
+		price *= $dataItems[unitId].price;
+	}
+	return price;
+}
+
+// convertBase: Converts the base number into a Currency Array
+// depending on how many currencies there are and the exchange rate.
+// 100505 (3x currencies at [10000,100,1] rates) --> [10,5,5]
+function convertBase(baseNumber) {
+	const cache = DataManager.currencies();
+	if (cache.length === 0) return [baseNumber];
+	const list = [];
+	for (const item of cache) {
+		if (baseNumber <= 0) { list.push(0); continue; }
+		let rate = item.price;
+		let value = Math.floor(baseNumber / rate);
+		baseNumber -= value * rate;
+		list.push(value);
+	}
+	return list;
+}
 
 /*:
  * @target MZ
- * @plugindesc [v1.3] Allows usage of multiple currencies as seen in both
+ * @plugindesc [v1.4] Allows usage of multiple currencies as seen in both
  * real life and in other RPGs! Dollars, Shillings, Gold, you name it!
  * @author LordValinar
  * @url https://github.com/DarkArchon85/RMMZ-Plugins
@@ -90,8 +131,8 @@ Imported["LvMZ_Currencies"] = true;
  * of Electrum). Now you can control your own currencies within your game 
  * world. Just follow the instructions below.
  *
- * This plugin is part of a set, but can be used independently. Requires
- * LvMZ_Core.js!
+ * This plugin is part of a set, but can be used independently. 
+ * Requires LvMZ_Core.js!
  *
  * == THE ECONOMICS TRINITY ==
  *  - LvMZ_Factions.js
@@ -227,6 +268,8 @@ Imported["LvMZ_Currencies"] = true;
  * Changelog
  * ----------------------------------------------------------------------------
  *
+ *  v1.4 - Final: itemType() moved to LvMZ_Core; code cleanup
+ * 
  *  v1.3 - Updated compatibility for LvMZ_Core v1.5+
  *
  *  v1.2 - Updated to new format plus minor fixes for demo; Can set or reset
@@ -240,14 +283,6 @@ Imported["LvMZ_Currencies"] = true;
  * ----------------------------------------------------------------------------
  */
 //=============================================================================
-
-var LvMZ = LvMZ || {};
-LvMZ.Currencies = {
-	name: "Alternate Currencies",
-	desc: "Buy or sell with items, weapons, armors, or variables!",
-	version: 1.3,
-	curMode: null
-};
 
 (($) => {
 'use strict';
@@ -1330,39 +1365,3 @@ if (Imported['LvMZ_Economy']) {
 }
 
 })(LvMZ.Currencies);
-
-// -- Global Functions
-function itemType(item) {
-	const object = new Game_Item(item);
-	return object._dataClass;
-}
-
-// convertPrice: Converts a standard item pricing (via Database) and 
-// compares it with any notetags (ex: <Unit:#>) and then returns 
-// it in a base number format (lowest currency)
-function convertPrice(price, item) {
-	if (DataManager.currencies().length > 0) {
-		const params = new LvParams('LvMZ_Currencies');
-		const defUnit = params.value('defUnit','num');
-		const unitId = item && item.meta.Unit ? Number(item.meta.Unit) : defUnit;
-		price *= $dataItems[unitId].price;
-	}
-	return price;
-}
-
-// convertBase: Converts the base number into a Currency Array
-// depending on how many currencies there are and the exchange rate.
-// 100505 (3x currencies at [10000,100,1] rates) --> [10,5,5]
-function convertBase(baseNumber) {
-	const cache = DataManager.currencies();
-	if (cache.length === 0) return [baseNumber];
-	const list = [];
-	for (const item of cache) {
-		if (baseNumber <= 0) { list.push(0); continue; }
-		let rate = item.price;
-		let value = Math.floor(baseNumber / rate);
-		baseNumber -= value * rate;
-		list.push(value);
-	}
-	return list;
-}
