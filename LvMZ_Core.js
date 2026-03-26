@@ -120,7 +120,8 @@ Object.defineProperty(Array.prototype, "sortByColumn", {
  *  Match two objects with possibly other object or array values
  *
  * @memberof LvCore
- * @param {array|object} obj - The array or object to compare
+ * @param {array|object} source - Array or object to compare
+ * @param {array|object} obj - Array or object to compare
  * @returns {boolean} True if all values match 
  */
 function objectsMatch(source, obj) {
@@ -431,7 +432,8 @@ LvDebug.update = function() {
 //-----------------------------------------------------------------------------
 // LvMZ_RemoteEvent
 //
-// Used to create a Game_Event loading data from another map.
+// Only use this to manipulate event data from another map. Whether you
+// or getting or setting, do not attempt to move it or start animations.
 
 function LvMZ_RemoteEvent() {
 	this.initialize(...arguments);
@@ -450,6 +452,26 @@ LvMZ_RemoteEvent.prototype.initialize = function(mapId, eventId) {
 
 LvMZ_RemoteEvent.prototype.event = function() {
 	return DataManager.map(this._mapId).events[this._eventId];
+};
+
+LvMZ_RemoteEvent.prototype.updateAnimation = function() {
+	//: Disabled - don't need animations
+};
+
+LvMZ_RemoteEvent.prototype.moveStraight = function(d) {
+	//: Disabled - no movement
+};
+
+LvMZ_RemoteEvent.prototype.moveDiagonally = function(horz, vert) {
+	//: Disabled - no movement
+};
+
+LvMZ_RemoteEvent.prototype.forceMoveRoute = function(moveRoute) {
+	//: Disabled - no movement
+};
+
+LvMZ_RemoteEvent.prototype.jump = function(xPlus, yPlus) {
+	//: Disabled - no movement
 };
 
 LvMZ_RemoteEvent.prototype.updateSelfMovement = function() {
