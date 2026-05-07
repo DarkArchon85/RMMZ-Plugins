@@ -5,13 +5,13 @@
 
 // -- Global Variables --------------------------------------------------------
 var LvMZ = LvMZ || {};
-if (!LvMZ.Core || LvMZ.Core.version < 1.5) {
-	throw new Error("LvMZ_Core version 1.5 or later required!");
+if (!LvMZ.Core || LvMZ.Core.version < 1.8) {
+	throw new Error("LvMZ_Core version 1.8 or later required!");
 }
 LvMZ.Factions = {
-	name: "Character Function Library",
+	name: "Character Functions Library",
 	desc: "Database of functions dealing with: Factions, Races, Genders, Fame, Relations and Titles!",
-	version: 2.1
+	version: 2.3
 };
 var Imported = Imported || {};
 Imported["LvMZ_Factions"] = true;
@@ -20,7 +20,7 @@ var $lvFactions = null;
 
 /*:
  * @target MZ
- * @plugindesc [v2.1] Core Plugin - Required for other plugins interacting
+ * @plugindesc [v2.3] Core Plugin - Required for other plugins interacting
  * with factions, relationship, genders or titles (ex: LvMZ_Economy.js)
  * @author LordValinar
  * @url https://github.com/DarkArchon85/RMMZ-Plugins
@@ -36,7 +36,7 @@ var $lvFactions = null;
  * @decimals 0
  * @min 1
  * @desc The lowest age an actor or NPC (event) can go.
- * @default 15
+ * @default 10
  *
  * @param defaultAge
  * @text Default-Start Age
@@ -52,9 +52,10 @@ var $lvFactions = null;
  * @parent -- Age Settings --
  * @type number
  * @decimals 0
- * @desc Default lifespan for NPC or actor.
- * This is the maximum possible age.
- * @default 85
+ * @min -1
+ * @desc Default maximum lifespan for NPC or actor.
+ * Setting this to -1 makes them immortal.
+ * @default 100
  *
  * @param ageSelfVar
  * @text Age Variable
@@ -111,7 +112,7 @@ var $lvFactions = null;
  * @type struct<Relationship>[]
  * @desc List of name and value of each romance status.
  * From acquaintances to lovers, or otherwise defined.
- * @default ["{\Name\":\"Life Partners\",\"MinValue\":\"81\",\"MaxValue\":\"100\",\"Value\":\"5\"}","{\Name\":\"Lovers\",\"MinValue\":\"61\",\"MaxValue\":\"80\",\"Value\":\"3\"}","{\Name\":\"Courting\",\"MinValue\":\"41\",\"MaxValue\":\"60\",\"Value\":\"2\"}","{\Name\":\"Romantic Interests\",\"MinValue\":\"21\",\"MaxValue\":\"40\",\"Value\":\"1\"}","{\Name\":\"Acquaintances\",\"MinValue\":\"1\",\"MaxValue\":\"20\",\"Value\":\"0\"}"]
+ * @default ["{\"Name\":\"Life Partners\",\"MinValue\":\"81\",\"MaxValue\":\"100\",\"Value\":\"5\"}","{\"Name\":\"Lovers\",\"MinValue\":\"61\",\"MaxValue\":\"80\",\"Value\":\"3\"}","{\"Name\":\"Courting\",\"MinValue\":\"41\",\"MaxValue\":\"60\",\"Value\":\"2\"}","{\"Name\":\"Romantic Interests\",\"MinValue\":\"21\",\"MaxValue\":\"40\",\"Value\":\"1\"}","{\"Name\":\"Acquaintances\",\"MinValue\":\"1\",\"MaxValue\":\"20\",\"Value\":\"0\"}"]
  *
  * @param TitleList
  * @text Title Relations
@@ -125,7 +126,7 @@ var $lvFactions = null;
  * @parent -- List Settings --
  * @type struct<Age>[]
  * @desc List of Ages and value adjustments (LvMZ_Economy)
- * @default []
+ * @default ["{\"Name\":\"Child\",\"minRange\":\"10\",\"maxRange\":\"15\",\"Value\":\"0\"}","{\"Name\":\"Young Adult\",\"minRange\":\"16\",\"maxRange\":\"35\",\"Value\":\"0\"}","{\"Name\":\"Adult\",\"minRange\":\"36\",\"maxRange\":\"65\",\"Value\":\"0\"}","{\"Name\":\"Elder\",\"minRange\":\"66\",\"maxRange\":\"100\",\"Value\":\"0\"}"]
  *
  * @ --------------------------------------------------------------------------
  *
@@ -516,7 +517,7 @@ var $lvFactions = null;
  * @type number
  * @decimals 0
  * @desc Min-Max determiend by plugin parameters and adjustments.
- * Default: Min(15), Age(18), Lifespan(85)
+ * Default: Min(10), Age(18), Lifespan(100)
  * @default 0
  *
  * @arg lifespan
@@ -917,7 +918,9 @@ var $lvFactions = null;
  * Changelog
  * ----------------------------------------------------------------------------
  *
- * v2.1 - Final (updates map events' age data if applicable)
+ * v2.3 - Final: Updated requirements and fixed plugin commands
+ * v2.2 - Failsafe check on max lifespan needed fixing
+ * v2.1 - Hotfixes and code cleanup
  * v2.0 - Various fixes and adjustments
  * v1.9 - Adjusts/fixes a few age related functions
  * v1.8 - Quick fix (forgot defaultAge and defaultLife constants..)
@@ -1124,8 +1127,8 @@ var $lvFactions = null;
  * type number
  * @decimals 0
  * @desc Minimum age for this price adjustment.
- * Absolute minimum equals "defaultAge" parameter.
- * @default 18
+ * Absolute minimum equals "minAge" parameter.
+ * @default 10
  *
  * @param maxRange
  * @text Age Range (Maximum)
@@ -1133,7 +1136,7 @@ var $lvFactions = null;
  * @decimals 0
  * @desc Maximum age for this price adjustment.
  * Aboslute maximum equals "defaultLife" parameter.
- * @default 85
+ * @default 100
  *
  * @param Value
  * @text Price Adjustment
@@ -1177,18 +1180,23 @@ var $lvFactions = null;
  */
 // ============================================================================
 
-(() => {
+(($) => {
 'use strict';
 
 const pluginName  = "LvMZ_Factions";
 const params      = new LvParams(pluginName);
 const absMinAge   = params.value('minAge','num');
 const defaultLife = params.value('defaultLife','num');
-if (defaultLife <= absMinAge) {// - Failsafe
+if (defaultLife > 0 && defaultLife <= absMinAge) {// - Failsafe
 	throw new Error("Lifespan cannot be less than or equal to the Minimum Age!");
 }
 const defaultAge  = params.value('defaultAge','num').clamp(absMinAge, defaultLife);
 const ageVariable = params.value('ageSelfVar','num');
+
+// Set as part of public object
+$.minAge = absMinAge;
+$.startAge = defaultAge;
+$.maxLife = defaultLife;
 
 /******************************************************************************
 	plugin commands
@@ -1196,12 +1204,13 @@ const ageVariable = params.value('ageSelfVar','num');
 PluginManager.registerCommand(pluginName, 'setFaction', args => {
 	const id = Number(args.targetId);
 	const isLeader = args.leader.toLowerCase() === "true";
-	const name = args.factionName.replace(/[\\]*V\[(\d+)\]/gi, (_, p1) =>
+	const text = args.factionName.replace(/[\\]+/g, '');
+	const name = text.replace(/V\[(\d+)\]/gi, (_, p1) =>
 		$gameVariables.value(parseInt(p1))
 	);
 	switch (args.target) {
 		case 'Actor': {
-			let target = $gameParty.battleMembers()[id - 1];
+			const target = $gameParty.battleMembers()[id - 1];
 			target.lvSet('setFaction', [name, isLeader]);
 		} break;
 		case 'Party': {
@@ -1211,7 +1220,7 @@ PluginManager.registerCommand(pluginName, 'setFaction', args => {
 			}
 		} break;
 		case 'Event': {
-			let target = $gameMap.event(id);
+			const target = $gameMap.event(id);
 			target.lvSet('setFaction', [name, isLeader]);
 		} break;
 	}
@@ -1221,7 +1230,7 @@ PluginManager.registerCommand(pluginName, 'leaveFaction', args => {
 	const id = Number(args.targetId);
 	switch (args.target) {
 		case 'Actor': {
-			let target = $gameParty.battleMembers()[id - 1];
+			const target = $gameParty.battleMembers()[id - 1];
 			target.lvSet('leaveFaction');
 		} break;
 		case 'Party':
@@ -1230,7 +1239,7 @@ PluginManager.registerCommand(pluginName, 'leaveFaction', args => {
 			}
 			break;
 		case 'Event': {
-			let target = $gameMap.event(id);
+			const target = $gameMap.event(id);
 			target.lvSet('leaveFaction');
 		} break;
 	}
@@ -1241,7 +1250,7 @@ PluginManager.registerCommand(pluginName, 'facStatus', args => {
 	const value = args.setStatus.toLowerCase() === "true";
 	switch (args.target) {
 		case 'Actor': {
-			let target = $gameParty.battleMembers()[id - 1];
+			const target = $gameParty.battleMembers()[id - 1];
 			target.lvSet('setHiddenFaction', [value]);
 		} break;
 		case 'Party': {
@@ -1250,7 +1259,7 @@ PluginManager.registerCommand(pluginName, 'facStatus', args => {
 			}
 		} break;
 		case 'Event': {
-			let target = $gameMap.event(id);
+			const target = $gameMap.event(id);
 			target.lvSet('setHiddenFaction', [value]);
 		} break;
 	}
@@ -1261,7 +1270,8 @@ PluginManager.registerCommand(pluginName, 'setRace', args => {
 	const target = args.target === 'Actor' 
 		? $gameParty.battleMembers()[id - 1] 
 		: $gameMap.event(id);
-	const name = args.raceName.replace(/[\\]*V\[(\d+)\]/gi, (_, p1) =>
+	const text = args.raceName.replace(/[\\]+/g, '');
+	const name = text.replace(/V\[(\d+)\]/gi, (_, p1) =>
 		$gameVariables.value(parseInt(p1))
 	);
 	target.lvSet('setRace', [name]);
@@ -1272,7 +1282,8 @@ PluginManager.registerCommand(pluginName, 'setGender', args => {
 	const target = args.target === 'Actor'
 		? $gameParty.battleMembers()[id - 1]
 		: $gameMap.event(id);
-	const name = args.genderName.replace(/[\\]*V\[(\d+)\]/gi, (_, p1) =>
+	const text = args.genderName.replace(/[\\]+/g, '');
+	const name = text.replace(/V\[(\d+)\]/gi, (_, p1) =>
 		$gameVariables.value(parseInt(p1))
 	);
 	target.lvSet('setGender', [name]);
@@ -1342,12 +1353,13 @@ PluginManager.chooseAction = function(source, target, args) {
 // --
 PluginManager.registerCommand(pluginName, 'addTitle', args => {
 	const id = Number(args.targetId);
-	const name = args.titleName.replace(/[\\]*V\[(\d+)\]/gi, (_, p1) =>
+	const text = args.titleName.replace(/[\\]+/g, '');
+	const name = text.replace(/V\[(\d+)\]/gi, (_, p1) =>
 		$gameVariables.value(parseInt(p1))
 	);
 	switch (args.target) {
 		case 'Actor': {
-			let target = $gameParty.battleMembers()[id - 1];
+			const target = $gameParty.battleMembers()[id - 1];
 			target.lvSet('addTitle', [name]);
 		} break;
 		case 'Party': {
@@ -1356,7 +1368,7 @@ PluginManager.registerCommand(pluginName, 'addTitle', args => {
 			}
 		} break;
 		case 'Event': {
-			let target = $gameMap.event(id);
+			const target = $gameMap.event(id);
 			target.lvSet('addTitle', [name]);
 		} break;
 	}
@@ -1364,12 +1376,13 @@ PluginManager.registerCommand(pluginName, 'addTitle', args => {
 
 PluginManager.registerCommand(pluginName, 'remTitle', args => {
 	const id = Number(args.targetId);
-	const name = args.titleName.replace(/[\\]*V\[(\d+)\]/gi, (_, p1) =>
+	const text = args.titleName.replace(/[\\]+/g, '');
+	const name = text.replace(/V\[(\d+)\]/gi, (_, p1) =>
 		$gameVariables.value(parseInt(p1))
 	);
 	switch (args.target) {
 		case 'Actor': {
-			let target = $gameParty.battleMembers()[id - 1];
+			const target = $gameParty.battleMembers()[id - 1];
 			target.lvSet('removeTitle', [name]);
 		} break;
 		case 'Party': {
@@ -1378,7 +1391,7 @@ PluginManager.registerCommand(pluginName, 'remTitle', args => {
 			}
 		} break;
 		case 'Event': {
-			let target = $gameMap.event(id);
+			const target = $gameMap.event(id);
 			target.lvSet('removeTitle', [name]);
 		} break;
 	}
@@ -1388,7 +1401,7 @@ PluginManager.registerCommand(pluginName, 'clearTitles', args => {
 	const id = Number(args.targetId);
 	switch (args.target) {
 		case 'Actor': {
-			let target = $gameParty.battleMembers()[id - 1];
+			const target = $gameParty.battleMembers()[id - 1];
 			target.lvSet('clearTitles');
 		} break;
 		case 'Party': {
@@ -1397,7 +1410,7 @@ PluginManager.registerCommand(pluginName, 'clearTitles', args => {
 			}
 		} break;
 		case 'Event': {
-			let target = $gameMap.event(id);
+			const target = $gameMap.event(id);
 			target.lvSet('clearTitles');
 		} break;
 	}
@@ -1422,7 +1435,8 @@ PluginManager.registerCommand(pluginName, 'setAge', args => {
 	if (!target._CFL) return;
 	const lifeAdjust = Number(args.lifespan);
 	if (lifeAdjust > 0) {
-		target._CFL.lifespan = target.lvGet('maxLife') + lifeAdjust;
+		const newValue = target.lvGet('maxLife') + lifeAdjust;
+		target._CFL.lifespan = Math.floor(newValue);
 	}
 	target.lvSet('setAge', [Number(args.value)]);
 });
@@ -1610,6 +1624,16 @@ Game_Actor.prototype.lvGet = function(methodName, params) {
 };
 
 
+// --- GAME MAP ---
+const gameMap_setup = Game_Map.prototype.setup;
+Game_Map.prototype.setup = function(mapId) {
+	for (const event of this.events()) {
+		event.updateAgeData();
+	}
+	gameMap_setup.call(this, mapId);
+};
+
+
 // --- GAME EVENTS ---
 const gameEvent_clearPage = Game_Event.prototype.clearPageSettings;
 Game_Event.prototype.clearPageSettings = function() {
@@ -1782,6 +1806,7 @@ Game_Event.prototype.loadLibrary = function(page) {
 
 Game_Event.prototype.updateAgeData = function(value) {
 	if (!this._CFL) return;
+	if (value === undefined) value = this.lvGet('ageValue');
 	const key = [this._mapId, this._eventId, "SelfVar", ageVariable];
 	const maxLifespan = this.lvGet('maxLife');
 	if (value <= maxLifespan || maxLifespan === -1) {
@@ -1972,7 +1997,7 @@ Game_Interpreter.prototype.getPriceAdjust = function(source, target, type) {
 	return source.lvGet('priceAdjust', [target, type.toLowerCase()]);
 };
 
-})();
+})(LvMZ.Factions);
 
 /******************************************************************************
 	public functions
@@ -1993,8 +2018,6 @@ Game_Factions.prototype.initialize = function() {
 	this.loveList     = params.value('RomanceScale','json');
 	this.titleList    = params.value('TitleList','json');
 	this.ageList      = params.value('AgeList','json');
-	this._minAge      = params.value('minAge','num');
-	this._defaultLife = params.value('defaultLife','num');
 	this._factions    = this.initFactionData();
 	this._races       = this.initRaceData();
 	this._genders     = this.initGenderData();
@@ -2248,10 +2271,9 @@ Game_Factions.prototype.isMonster = function(object) {
 };
 
 Game_Factions.prototype.race = function(object) {
-	if (this.checkVisuMZ(object)) {
-		return object.getTraitSet('Race');
-	}
-	return object._CFL.race || "";
+	return this.checkVisuMZ(object) 
+		? object.getTraitSet('Race') 
+		: object._CFL.race || "";
 };
 
 Game_Factions.prototype.raceValid = function(object) {
@@ -2288,10 +2310,9 @@ Game_Factions.prototype.setGender = function(object, name) {
 };
 
 Game_Factions.prototype.gender = function(object) {
-	if (this.checkVisuMZ(object)) {
-		return object.getTraitSet('Gender');
-	}
-	return object._CFL.gender || "";
+	return this.checkVisuMZ(object)
+		? object.getTraitSet('Gender')
+		: object._CFL.gender || "";
 };
 
 Game_Factions.prototype.genderValid = function(object) {
@@ -2496,14 +2517,6 @@ Game_Factions.prototype.checkTitle = function(object, name) {
 // ----------------------------------------------------------------------------
 // Age methods - Everything to do with ages and max lifespan
 
-Game_Factions.prototype.minAge = function() {
-	return this._minAge;
-};
-
-Game_Factions.prototype.defaultLife = function() {
-	return this._defaultLife;
-};
-
 Game_Factions.prototype.maxLife = function(object) {
 	return object._CFL.lifespan;
 };
@@ -2514,12 +2527,13 @@ Game_Factions.prototype.ageValue = function(object) {
 
 Game_Factions.prototype.setLife = function(object, value) {
 	object._CFL.lifespan = Math.floor(value);
-	if (object.updateAgeData) object.updateAgeData(object._CFL.age);
+	if (object.updateAgeData) object.updateAgeData();
 	if (object.checkAge) object.checkAge();
 };
 
 Game_Factions.prototype.setAge = function(object, value) {
-	const newValue = Math.max(this._minAge, Math.floor(value));
+	const minAge = LvMZ.Factions.minAge;
+	const newValue = Math.max(minAge, Math.floor(value));
 	object._CFL.age = newValue;
 	if (object.updateAgeData) object.updateAgeData(newValue);
 	if (object.checkAge) object.checkAge();
