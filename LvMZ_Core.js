@@ -8,7 +8,7 @@ var LvMZ = {};
 LvMZ.Core = {
 	name: "LvMZ_Core",
 	desc: "Core functionality and quality of life settings.",
-	version: 1.6
+	version: 1.8
 };
 var Imported = Imported || {};
 Imported["LvMZ_Core"] = true;
@@ -224,7 +224,7 @@ LvParams.prototype.object = function(key) {
 };
 
 LvParams.prototype.percent = function(key, min = -1, max = 1) {
-	return (Number(this._data[key]) / 100).percent(Number(min), Number(max));
+	return Number(this._data[key] / 100).percent(Number(min), Number(max));
 };
 
 LvParams.prototype.parseSE = function(object) {
@@ -347,13 +347,13 @@ MapManager.makeEmptyMap = function() {
  * @returns {object} The event running
  */
 MapManager.event = function() {
-	if (!$gameMap.isEventRunning()) {
+	const eventId = $gameMap._interpreter.eventId();
+	if (!$gameMap.isEventRunning() || eventId === 0) {
 		if ($gameTemp.isPlaytest()) {
-			alert("ERROR(MapManager): No event running!");
+			alert("ERROR(MapManager): No map event running!");
 		}
 		return null;
 	}
-	const eventId = $gameMap._interpreter.eventId();
 	return $gameMap.event(eventId);
 };
 
@@ -386,7 +386,7 @@ MapManager.isTilePassable = function(x, y) {
  * @returns {array} Array of the map's events using an internal event object
  */
 MapManager.simulateEvents = function(mapId) {
-	if ($gameMap.mapId() == mapId) return $gameMap.events();
+	if ($gameMap.mapId() === mapId) return $gameMap.events();
 	// Replicates Game_Map's method to setup events
 	const list = DataManager.map(mapId).events.filter(ev => !!ev);
 	const events = [];
@@ -433,7 +433,7 @@ LvDebug.update = function() {
 // LvMZ_RemoteEvent
 //
 // Only use this to manipulate event data from another map. Whether you
-// or getting or setting, do not attempt to move it or start animations.
+// are getting or setting, do not attempt to move it or start animations.
 
 function LvMZ_RemoteEvent() {
 	this.initialize(...arguments);
@@ -562,7 +562,7 @@ function itemGroup(type, id) {
  */
 function itemType(item) {
 	const object = new Game_Item(item);
-	return (object._dataClass || "").toLowerCase();
+	return object._dataClass;
 }
 
 /**
@@ -597,7 +597,7 @@ function validEventId(x, y) {
 
 /*:
  * @target MZ
- * @plugindesc [v1.6] Core functionality and quality of life settings.
+ * @plugindesc [v1.8] Core functionality and quality of life settings.
  * @author LordValinar
  * @url https://github.com/DarkArchon85/RMMZ-Plugins
  *
@@ -1100,6 +1100,7 @@ function validEventId(x, y) {
  *
  *   This function uses the Game_Item class to turn a data object
  *   into its basic string type:
+ *   Example: $dataSkills[itemId] = "skill"
  *   Example: $dataItems[itemId] = "item"
  *   Example: $dataWeapons[itemId] = "weapon"
  *   Example: $dataArmors[itemId] = "armor"
@@ -1280,6 +1281,11 @@ function validEventId(x, y) {
  * you would with any other event (just use a mapId that is not on the 
  * same one as the player already is).
  *
+ * It is advised to only use this to get data or use Game_Event 
+ * functions. Do NOT try to force move the event, activate any animations
+ * like the balloons, etc. By default the remote event is set to the 
+ * top left corner of the map (x: -1, y: -1) out of view for a reason.
+ *
  *
  * ===== LOCAL FUNCTIONS =====
  *
@@ -1327,7 +1333,7 @@ function validEventId(x, y) {
  *   Gets the tile's X/Y position in front of player.
  *
  *
- * Game_Player.prototype.extendActivate = function(length = 1) {};
+ * Game_Player.prototype.extendActivate = function(length = 2) {};
  *
  *   Can be used to activate another event (length) away. Similar to how
  *   counters still activate the shopkeeper behind them, you can use this
@@ -1407,6 +1413,9 @@ function validEventId(x, y) {
  * Changelog
  * ----------------------------------------------------------------------------
  *
+ * v1.8 - MapManager.event() ensures a MAP event is running (eventId > 0);
+ *        Also fixed extendActivate() (was getting wrong x,y coordinates)
+ * v1.7 - Hotfix (skipTitle for Scene_Boot)
  * v1.6 - Added Game_System function to toggle the Skip Intro setting,
  *        and fixed LvMZ_RemoteEvent disabling autorun events and movement
  * v1.5 - Major fix needed (function preventing Graphics initialization),
@@ -1513,6 +1522,7 @@ const pluginName  = "LvMZ_Core";
 const params      = new LvParams(pluginName);
 const startDir    = params.value('startDir');
 const debugMode   = params.value('debugMode','bool');
+const removeTitle = params.value('removeTitle','bool');
 const permaDeath  = params.value('permaDeath','bool');
 const maxLvCtrl   = params.value('maxLevelControl','bool');
 const levelCap    = params.value('maxLevel','num');
@@ -1570,10 +1580,9 @@ PluginManager.registerCommand(pluginName, 'skipIntro', args => {
 ******************************************************************************/
 
 // --- DATA MANAGER -----------------------------------------------------------
-const dm_databaseLoaded = DataManager.isDatabaseLoaded;
+const dm_isDBLoaded = DataManager.isDatabaseLoaded;
 DataManager.isDatabaseLoaded = function() {
-	const isLoaded = dm_databaseLoaded.call(this);
-	if (!isLoaded) return false;
+	if (!dm_isDBLoaded.call(this)) return false;
 	if (!this._preloadedMaps) {
 		this.cacheMapData();
 	}
@@ -1584,7 +1593,6 @@ const dataManager_create = DataManager.createGameObjects;
 DataManager.createGameObjects = function() {
 	$advisor = new Game_Advisor();
 	$gameSelfVar = new Game_SelfVariables();
-	// --
 	dataManager_create.call(this);
 };
 
@@ -1605,7 +1613,7 @@ DataManager.extractSaveContents = function(contents) {
 
 // -- Map Management
 DataManager.cacheMapData = function() {
-	this._preloadedMaps = [];
+	this._preloadedMaps = {};
 	const maps = $dataMapInfos.filter(obj => !!obj).map(map => Number(map.id));
 	for (const mapId of maps) {
 		MapManager.loadMapData(mapId, result => {
@@ -1705,7 +1713,7 @@ Game_Temp.prototype.random = function(value1, value2) {
 const gameSys_init = Game_System.prototype.initialize;
 Game_System.prototype.initialize = function() {
 	gameSys_init.call(this);
-	this._skipTitle = params.value('removeTitle','bool');
+	this._skipTitle = removeTitle;
 };
 
 Game_System.prototype.setSkipTitle = function(value) {
@@ -1844,7 +1852,7 @@ Game_Actor.prototype.changeEquip = function(slotId, item) {
 };
 
 Game_Actor.prototype.twoHandedCheck = function(newItem) {
-	if (this.weapon2H(newItem)) {
+	if (checkTag(newItem, /<TWO[\-_ ]*HANDED>/gi)) {
 		// Two Handed Weapons: If a 2h weapon is equipped, 
 		// we remove Dual Wielder and lock shield slot (if applicable)
 		if (this.isStateAffected(dualWield)) {
@@ -1863,10 +1871,6 @@ Game_Actor.prototype.twoHandedCheck = function(newItem) {
 			this.addState(dualWield);
 		}
 	}
-};
-
-Game_Actor.prototype.weapon2H = function(item) {
-	return checkTag(item, /<TWO[\-_ ]*HANDED>/gi);
 };
 
 Game_Actor.prototype.autoEquipItem = function(etypeId) {
@@ -1982,10 +1986,10 @@ Game_Player.prototype.frontY = function() {
 	return $gameMap.roundYWithDirection(this.y, this._direction)
 };
 
-Game_Player.prototype.extendActivate = function(length = 1) {
+Game_Player.prototype.extendActivate = function(length = 2) {
 	const d = this.direction();
-	let x = $gameMap.roundXWithDirection(this.x, d);
-	let y = $gameMap.roundYWithDirection(this.y, d);
+	let x = this.x;
+	let y = this.y;
 	while (--length >= 0) {
 		// Failsafe (check if out of bounds)
 		let x1 = $gameMap.roundXWithDirection(x, d);
@@ -1997,10 +2001,9 @@ Game_Player.prototype.extendActivate = function(length = 1) {
 				console.log(" - Returning previous position: " + x + "," + y);
 			}
 			break;
-		} else {
-			x = x1;
-			y = y1;
 		}
+		x = x1;
+		y = y1;
 	}
 	this.activateEventXy(x, y);
 };
@@ -2259,7 +2262,7 @@ Scene_Base.prototype.checkGameover = function() {
 // --- SCENE BOOT -------------------------------------------------------------
 const sceneBoot_startNormalGame = Scene_Boot.prototype.startNormalGame;
 Scene_Boot.prototype.startNormalGame = function() {
-	if ($gameSystem.skipTitle()) {
+	if (removeTitle) {
 		this.checkPlayerLocation();
 		DataManager.setupNewGame();
 		SceneManager.goto(Scene_Map);
