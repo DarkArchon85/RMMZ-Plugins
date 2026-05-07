@@ -5,13 +5,13 @@
 
 // --- Global Variables -------------------------------------------------------
 var LvMZ = LvMZ || {};
-if (!LvMZ.Core || LvMZ.Core.version < 1.5) {
-	throw new Error("LvMZ_Core version 1.5 or later required!");
+if (!LvMZ.Core || LvMZ.Core.version < 1.8) {
+	throw new Error("LvMZ_Core version 1.8 or later required!");
 }
 LvMZ.Currencies = {
 	name: "Alternate Currencies",
 	desc: "Buy or sell with items, weapons, armors, or variables!",
-	version: 1.4,
+	version: 1.5,
 	curMode: null
 };
 var Imported = Imported || {};
@@ -28,7 +28,7 @@ function convertPrice(price, item) {
 		const params = new LvParams('LvMZ_Currencies');
 		const defUnit = params.value('defUnit','num');
 		const unitId = item && item.meta.Unit ? Number(item.meta.Unit) : defUnit;
-		price *= $dataItems[unitId].price;
+		return price * $dataItems[unitId].price;
 	}
 	return price;
 }
@@ -50,9 +50,18 @@ function convertBase(baseNumber) {
 	return list;
 }
 
+// Used for debugging (console logs) functions here
+function debugGroup(group) {
+	if (group === $dataItems)   return "Items";
+	if (group === $dataWeapons) return "Weapons";
+	if (group === $dataArmors)  return "Armors";
+	if (group === $dataSkills)  return "Skills";
+	return "Invalid";
+}
+
 /*:
  * @target MZ
- * @plugindesc [v1.4] Allows usage of multiple currencies as seen in both
+ * @plugindesc [v1.5] Allows usage of multiple currencies as seen in both
  * real life and in other RPGs! Dollars, Shillings, Gold, you name it!
  * @author LordValinar
  * @url https://github.com/DarkArchon85/RMMZ-Plugins
@@ -98,7 +107,7 @@ function convertBase(baseNumber) {
  * @option Item
  * @option Weapon
  * @option Armor
- * @desc Currenty mode (item, weapon, armor will get from database),
+ * @desc Currency mode (item, weapon, armor will get from database),
  * Default will return to normal gold/currencies.
  * @default Default
  * 
@@ -268,7 +277,9 @@ function convertBase(baseNumber) {
  * Changelog
  * ----------------------------------------------------------------------------
  *
- *  v1.4 - Final: itemType() moved to LvMZ_Core; code cleanup
+ *  v1.5 - Final: Fixed buy/sell number (accidently converted prices twice)
+ *
+ *  v1.4 - itemType() moved to LvMZ_Core; code cleanup
  * 
  *  v1.3 - Updated compatibility for LvMZ_Core v1.5+
  *
@@ -320,12 +331,12 @@ function cache(object, type, mode, id, price) {
 function clone(object, cloneItem) {
 	const type = itemType(cloneItem);
 	if (!cloneItem || !type || object === cloneItem) return;
-	if (type == 'skill') return; // items, weapons, and armors only
+	if (type === 'skill') return; // items, weapons, and armors only
 	object.clone = cloneItem;
 	object.name = cloneItem.name;
 	object.iconIndex = cloneItem.iconIndex;
 	object.description = cloneItem.description;
-	if (type == 'item') object.effects = cloneItem.effects;
+	if (type === 'item') object.effects = cloneItem.effects;
 	if (['weapon','armor'].includes(type)) {
 		object.params = cloneItem.params.slice();
 	}
@@ -383,8 +394,8 @@ DataManager.setCurrencySet = function(array) {
  * @param {object} group - Database json with item/equip objects
  */
 DataManager.cacheMeta = function(group) {
-	const tagID = /<ALTCURRENCY:\s(VAR||ITEM||WEAPON||ARMOR)\s(\d+)\s(BUY||SELL)\s(\d+)>/i;
-	const tagNAME = /<ALTCURRENCY:\s(ITEM||WEAPON||ARMOR)\s(.*)\s(BUY||SELL)\s(\d+)>/i;
+	const tagID = /<ALTCURRENCY:\s(VAR|ITEM|WEAPON|ARMOR)\s(\d+)\s(BUY|SELL)\s(\d+)>/i;
+	const tagNAME = /<ALTCURRENCY:\s(ITEM|WEAPON|ARMOR)\s(.*)\s(BUY|SELL)\s(\d+)>/i;
 	let type, id, mode, price;
 	for (const item of group.filter(obj => !!obj)) {
 		const data = (item.note || "").split(/[\r\n]+/);
@@ -396,17 +407,31 @@ DataManager.cacheMeta = function(group) {
 				price = parseInt(RegExp.$4);
 				cache(item, type, mode, id, price);
 			} else if (meta.match(tagNAME)) {
-				type = RegExp.$1.capFirst();
-				mode = RegExp.$3.capFirst();
 				id = group.indexByKey("name", RegExp.$2);
-				price = parseInt(RegExp.$4);
-				cache(item, type, mode, id, price);
-			} else if (meta.match(/<CLONE:[ ](\d+)>/i)) {
+				if (id >= 0) {
+					type = RegExp.$1.capFirst();
+					mode = RegExp.$3.capFirst();					
+					price = parseInt(RegExp.$4);
+					cache(item, type, mode, id, price);
+				} else if ($gameTemp.isPlaytest()) {
+					alert("Error: cacheMeta - check console");
+					console.log("=== DEBUG: DataManager.cacheMeta() ===");
+					console.log(" - Group: " + debugGroup(group));
+					console.log(" - Could not find index for " + RegExp.$2);
+				}
+			} else if (meta.match(/<CLONE:\s(\d+)>/i)) {
 				id = parseInt(RegExp.$1);
 				clone(item, group[id]);
-			} else if (meta.match(/<CLONE:\s([^>]*)>/i)) {
+			} else if (meta.match(/<CLONE:\s([^>]+)>/i)) {
 				id = group.indexByKey("name", RegExp.$1);
-				clone(item, group[id]);
+				if (id >= 0) {
+					clone(item, group[id]);
+				} else if ($gameTemp.isPlaytest()) {
+					alert("Error: cacheMeta - check console");
+					console.log("=== DEBUG: DataManager.cacheMeta() ===");
+					console.log(" - Group: Cloning");
+					console.log(" - Could not find index for " + RegExp.$1);
+				}
 			} else if (meta.match(/<CURRENCY>/i)) {
 				this._currencies[item.id] = item.price;
 			}
@@ -466,10 +491,9 @@ if (Imported["LvMZ_Economy"]) {
 // --- GAME PARTY ---
 const gameParty_maxGold = Game_Party.prototype.maxGold;
 Game_Party.prototype.maxGold = function() {
-	const cache = DataManager.currencies();
-	let maxGold = gameParty_maxGold.call(this);
-	if (cache.length > 0) {
-		maxGold *= $dataItems[defUnit].price;
+	const maxGold = gameParty_maxGold.call(this);
+	if (DataManager.currencies().length > 0) {
+		return maxGold * $dataItems[defUnit].price;
 	}
 	return maxGold;
 };
@@ -499,7 +523,7 @@ Game_Interpreter.prototype.command111 = function(params) {
 	return gameIntr_CondBranch.call(this, params);
 };
 
-// Overwrite - Change Gold
+// Change Gold ( overwrite )
 Game_Interpreter.prototype.command125 = function(params) {
 	const value = this.operateValue(params[0], params[1], params[2]);
 	const newValue = convertPrice(value);
@@ -583,28 +607,54 @@ Scene_Shop.prototype.onSellCancel = function() {
 
 // overwrite
 Scene_Shop.prototype.buyingPrice = function() {
-	let price = this._buyWindow.price(this._item);
+	let value, price = this._buyWindow.price(this._item);
+	
+	console.log("=== DEBUG :: buyingPrce() ===");
+	console.log(" - Original Price: " + price);
+	
 	if (Imported['LvMZ_Economy']) {
 		const index = this._buyWindow.index();
 		price = economicBuyPrice(price, index);
+		
+		console.log(" - Economic Buy Price: " + price);
 	}
 	if (!this.checkMeta(this._item)) {
-		return convertPrice(price, this._item);
-	}
-	return Math.floor(price);
+		value = convertPrice(price, this._item);
+		
+		console.log(" - Version: Normal");
+	} else {
+		value = Math.floor(price);
+		
+		console.log(" - Version: Alternate");
+	}		
+	console.log(" - Total Value: " + value);
+	return value;
 };
 
 // overwrite
 Scene_Shop.prototype.sellingPrice = function() {
-	let price = Math.floor(this._item.price / 2);
+	let value, price = Math.floor(this._item.price / 2);
+	
+	console.log("=== DEBUG :: sellingPrice() ===");
+	console.log(" - Original Price: " + price);
+	
 	if (Imported['LvMZ_Economy']) {
 		const index = this._sellWindow.index();
 		price = economicSellPrice(this._item.price, index);
+		
+		console.log(" - Economic Sell Price: " + price);
 	}
 	if (!this.checkMeta(this._item)) {
-		return convertPrice(price, this._item);
+		value = convertPrice(price, this._item);
+		
+		console.log(" - Version: Normal");
+	} else {
+		value = Math.floor(price);
+		
+		console.log(" - Version: Alternate");
 	}
-	return Math.floor(price);
+	console.log(" - Total Value: " + value);
+	return value;
 };
 
 // overwrite
@@ -659,8 +709,7 @@ Scene_Shop.prototype.maxSell = function() {
 Scene_Shop.prototype.doBuy_gold = function(number) {
 	const item = this._item;
 	const groups = ['Var','Item','Weapon','Armor'];
-	let alt = false;
-	let value, price;
+	let value, price, alt = false;
 	for (const type of groups) {
 		const key = 'alt'+type+'BuyPrices';
 		if (!item[key]) continue;
@@ -677,8 +726,15 @@ Scene_Shop.prototype.doBuy_gold = function(number) {
 		}
 	}
 	if (!alt) {
-		let amount = convertPrice(number * this.buyingPrice());
-		$gameParty.loseGold(amount);
+		price = this.buyingPrice();
+		value = number * price;
+		// --- Debug(delete later) ---
+		console.log("=== DEBUG :: doBuy_gold ===");
+		console.log(" - price: " + price);
+		console.log(" - total: " + value);
+		console.log(" - converted: " + convertPrice(value));
+		// ---------------------------
+		$gameParty.loseGold(value);
 	}
 };
 
@@ -690,8 +746,7 @@ Scene_Shop.prototype.doBuy_item = function(number) {
 Scene_Shop.prototype.doSell_gold = function(number) {
 	const item = this._item;
 	const groups = ['Var','Item','Weapon','Armor'];
-	let alt = false;
-	let value, price;
+	let value, price, alt = false;
 	for (const type of groups) {
 		const key = 'alt'+type+'SellPrices';
 		if (!item[key]) continue;
@@ -708,8 +763,15 @@ Scene_Shop.prototype.doSell_gold = function(number) {
 		}
 	}
 	if (!alt) {
-		let amount = convertPrice(number * this.sellingPrice());
-		$gameParty.gainGold(amount);
+		price = this.sellingPrice();
+		value = number * price;
+		// --- Debug(delete later) ---
+		console.log("=== DEBUG :: doSell_gold ===");
+		console.log(" - price: " + price);
+		console.log(" - total: " + value);
+		console.log(" - converted: " + convertPrice(value));
+		// ---------------------------
+		$gameParty.gainGold(value);
 	}
 };
 
