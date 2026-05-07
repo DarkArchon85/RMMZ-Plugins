@@ -5,8 +5,8 @@
 
 // -- Global Variables --------------------------------------------------------
 var LvMZ = LvMZ || {};
-if (!LvMZ.Core || LvMZ.Core.version < 1.5) {
-	throw new Error("LvMZ_Core version 1.5 or later required!");
+if (!LvMZ.Core || LvMZ.Core.version < 1.7) {
+	throw new Error("LvMZ_Core version 1.7 or later required!");
 }
 LvMZ.Economy = {
 	name: "Economy",
@@ -15,6 +15,89 @@ LvMZ.Economy = {
 };
 var Imported = Imported || {};
 Imported["LvMZ_Economy"] = true;
+
+// -- Public Functions --------------------------------------------------------
+
+function economicBuyPrice(price, index) {
+	price *= $gameSystem.markUp();		// Buy price
+	const min = Math.floor(price / 2);	// Half buy price
+	let adj = 0;						// Total price adjustment
+	// Supply & Demand
+	const demand = $gameSystem.demand(index);
+	adj += supplyCheck(index);
+	adj += demand[0]; 					// Rate(%)
+	adj += demand[1]; 					// Fixed Adjustment
+	// Faction, Race, Gender, Fame, Relation, Titles, and Age
+	//  * Positive numbers become discounts here!
+	if (Imported["LvMZ_Factions"]) {
+		const ev = MapManager.event();
+		const pc = $gameParty.leader();
+		adj += ev.lvGet('priceAdjust',[pc,'faction']) * -1;
+		adj += ev.lvGet('priceAdjust',[pc,'race']) * -1;
+		adj += ev.lvGet('priceAdjust',[pc,'gender']) * -1;
+		adj += ev.lvGet('priceAdjust',[pc,'reputation']) * -1;
+		adj += ev.lvGet('priceAdjust',[pc,'relation']) * -1;
+		adj += ev.lvGet('priceAdjust',[pc,'romance']) * -1;
+		adj += ev.lvGet('priceAdjust',[pc,'title']) * -1;
+		adj += ev.lvGet('priceAdjust',[pc,'age']) * -1;
+	}
+	// Taxes
+	adj += $gameSystem.taxRate();
+	// Apply Adjustments
+	price += (price * adj).percent();
+	return Math.max(min, price);
+};
+
+function economicSellPrice(price, index) {
+	price *= $gameSystem.markDown();    // Sell Price
+	const max = (price * 2); 			// Double Sell Price
+	let adj = 0;						// Total Price Adjustment
+	// Supply & Demand
+	const demand = $gameSystem.demand(index);
+	adj += supplyCheck(index);
+	adj += demand[0]; 					// Rate(%)
+	adj += demand[1]; 					// Fixed Adjustment
+	// Faction, Race, Gender, Fame, Relation, and Titles
+	if (Imported["LvMZ_Factions"]) {
+		const ev = MapManager.event();
+		const pc = $gameParty.leader();
+		adj += ev.lvGet('priceAdjust',[pc,'faction']);
+		adj += ev.lvGet('priceAdjust',[pc,'race']);
+		adj += ev.lvGet('priceAdjust',[pc,'gender']);
+		adj += ev.lvGet('priceAdjust',[pc,'reputation'])
+		adj += ev.lvGet('priceAdjust',[pc,'relation']);
+		adj += ev.lvGet('priceAdjust',[pc,'romance']);
+		adj += ev.lvGet('priceAdjust',[pc,'title']);
+		adj += ev.lvGet('priceAdjust',[pc,'age']);
+	}
+	// Taxes
+	adj -= $gameSystem.taxRate();
+	// Apply Adjustments
+	price += (price * adj).percent();
+	return price.clamp(1, max);
+};
+
+function supplyCheck(index) {
+	const shop = MapManager.event().shopData();
+	const stock = shop._stock[index];
+	const min = shop.sMin();
+	const max = shop.sMax();
+	const os  = shop.sOffset();
+	const rate = shop.sAdjust();
+	let adjust = 0;
+	if (stock < min) {
+		adjust = Math.floor((min - stock) / os) * rate;
+	} else if (stock > max) {
+		adjust = (Math.floor((stock - max) / os) * rate) * -1;
+	}
+	return (adjust / 100).percent();
+};
+
+function itemProxy(item) {
+	if (!item) return null;
+	if (!item.stolenType) return item;
+	return itemGroup(item.stolenType, item.id);
+};
 
 /*:
  * @target MZ
@@ -665,7 +748,7 @@ Imported["LvMZ_Economy"] = true;
  *
  * v2.1 - Final : reverted S&D rate value and code cleanup
  *
- * v2.0 - added "You:" text for party gold in shop menu
+ * v2.0 - added "Party:" text for party gold in shop menu
  *      - Fixed another S&D object that wasn't to LvMZ_Core standards
  *
  * v1.91 - Hotfix (S&D object wasn't to LvMZ_Core 1.5 standards)
@@ -877,7 +960,9 @@ PluginManager.registerCommand(pluginName, 'stealGold', args => {
 	$gameParty.stealGold(Number(args.value));
 });
 
-PluginManager.registerCommand(pluginName, 'resetStolen', $gameMap.recoverStolenItems());
+PluginManager.registerCommand(pluginName, 'resetStolen', args => {
+	$gameMap.recoverStolenItems();
+});
 
 PluginManager.registerCommand(pluginName, 'changeShop', args => {
 	const shopId = Number(args.shopId);
@@ -917,7 +1002,9 @@ PluginManager.registerCommand(pluginName, 'resetShop', args => {
 	if (shop) shop.refresh();
 });
 
-PluginManager.registerCommand(pluginName, 'cleanGold', $gameParty.cleanGold());
+PluginManager.registerCommand(pluginName, 'cleanGold', args => {
+	$gameParty.cleanGold();
+});
 
 /******************************************************************************
 	rmmv_managers.js
@@ -1215,10 +1302,11 @@ Game_Party.prototype.stealItem = function(item, amount, includeEquip) {
 };
 
 Game_Party.prototype.stolenGoods = function(item) {
-	if (!item) return null;
-	if (DataManager.isItem(item)) return this._stolenItems;
-	if (DataManager.isWeapon(item)) return this._stolenWeapons;
-	if (DataManager.isArmor(item)) return this._stolenArmors;
+	if (item) {
+		if (DataManager.isItem(item)) return this._stolenItems;
+		if (DataManager.isWeapon(item)) return this._stolenWeapons;
+		if (DataManager.isArmor(item)) return this._stolenArmors;
+	}
 	return null;
 };
 
@@ -1255,8 +1343,7 @@ Game_Party.prototype.storeGear = function(mapId, eventId, recover = false) {
 		mergeData(this._storage[1], this._weapons);
 		mergeData(this._storage[2], this._armors);
 		// store gold
-		const max = this.maxGold();
-		this._storage[3] = (this._storage[3] + this._gold).clamp(0, max);
+		this._storage[3] = (this._storage[3] + this._gold).clamp(0, this.maxGold());
 	} else {
 		this._storage = [this._items, this._weapons, this._armors, this._gold];
 	}
@@ -1291,13 +1378,19 @@ Game_Party.prototype.retrieveGear = function() {
 
 // Use in conditional branches
 Game_Party.prototype.gearStored = function() {
-	if (!this._storage) return false;
-	return this._storage.length > 0;
+	return (this._storage || []).length > 0;
 };
 
 Game_Party.prototype.contraband = function(mapId, eventId) {
 	const cache = this._contraband[mapId] ??= {};
 	return cache[eventId] ??= new Game_Contraband();
+};
+
+Game_Party.prototype.clearContraband = function(mapId, eventId) {
+	const cache = this._contraband[mapId];
+	if (cache) delete cache[eventId];
+	const length = Object.keys(this._contraband[mapId]).length;
+	if (length === 0) delete this._contraband[mapId];
 };
 
 // Clean out stolen coin
@@ -1339,33 +1432,32 @@ Game_Map.prototype.recoverStolenItems = function() {
 const gameEv_clear = Game_Event.prototype.clearPageSettings;
 Game_Event.prototype.clearPageSettings = function() {
 	gameEv_clear.call(this);
-	this.clearShop();
+	delete this._shopId;
 };
 
 const gameEv_setup = Game_Event.prototype.setupPageSettings;
 Game_Event.prototype.setupPageSettings = function() {
 	gameEv_setup.call(this);
-	this.checkIsShop();
 	this.initShopSettings();
 };
 
-Game_Event.prototype.checkIsShop = function() {
-	this.clearShop();
-	for (const command of this.list()) {
-		if (command.code == 302) {
-			this._isShop = true;
-			break;
-		}
-	}
+Game_Event.prototype.shopId = function() {
+	return this._shopId || 0;
 };
 
-Game_Event.prototype.clearShop = function() {
-	this._isShop = false;
-	this._shopId = 0;
+Game_Event.prototype.isShop = function() {
+	return this.shopId() > 0;
+};
+
+Game_Event.prototype.checkIsShop = function() {
+	for (const command of this.list()) {
+		if (command.code == 302) return true;
+	}
+	return false;
 };
 
 Game_Event.prototype.initShopSettings = function() {
-	if (!this.page() || !this.isShop()) { this.clearShop(); return;	}
+	if (!this.checkIsShop()) return;
 	const shop = this.shopData();
 	// Manual call required (Game_Interpreter.prototype.resetShop)
 	if (shop.needsRefresh()) return;
@@ -1414,10 +1506,6 @@ Game_Event.prototype.initShopSettings = function() {
 	this.saveShopData(shop);
 };
 
-Game_Event.prototype.isShop = function() {
-	return !!this._isShop;
-};
-
 Game_Event.prototype.shopData = function() {
 	const mapData = $gameMap.shopData(this._mapId);
 	return mapData[this._eventId] ??= this.createNewShop();
@@ -1439,7 +1527,7 @@ Game_Event.prototype.createNewShop = function() {
 };
 	
 Game_Event.prototype.switchShops = function(id) {
-	if (!this.isShop() || this._shopId === id) return;	
+	if (!id || !this.isShop() || this.shopId() === id) return;
 	// First, store current data 
 	const shop = this.shopData();
 	this.saveShopData(shop);
@@ -1471,6 +1559,7 @@ Game_Event.prototype.saveShopData = function(shop) {
 
 // --- GAME INTERPRETER ---
 Game_Interpreter.prototype.shop = function(type="default") {
+	if (this._eventId === 0) return null; // failsafe
 	const event = $gameMap.event(this._eventId);
 	if (event.isShop()) {
 		const shop = event.shopData();
@@ -1534,7 +1623,7 @@ Game_Interpreter.prototype.retrieveCache = function() {
 		$gameParty.stealGold(cache._gold);
 	}
 	// - Now clear it
-	delete $gameParty._contraband[this._mapId][this._eventId];
+	$gameParty.clearContraband(this._mapId, this._eventId);
 };
 
 /******************************************************************************
@@ -1745,13 +1834,13 @@ Window_Base.prototype.drawItemName = function(item, x, y, width) {
 
 Window_Base.prototype.drawStolenItemName = function(item, x, y, width) {
 	const iconY = y + (this.lineHeight() - ImageManager.iconHeight) / 2;
-	const delta = ImageManager.standardIconWidth - ImageManager.iconWidth;
-	const textMargin = ImageManager.standardIconWidth + 4;
+	const textMargin = ImageManager.iconWidth + 4;
 	const itemWidth = Math.max(0, width - textMargin);
 	const icon = stolenIcon > 0 ? stolenIcon : item.iconIndex;
+	this.drawIcon(icon, x, iconY);
 	this.processColorChange(2); // stolen item!
-	this.drawIcon(icon, x + delta / 2, iconY);
 	this.drawText(item.name, x + textMargin, y, itemWidth);
+	this.resetFontSettings();
 };
 
 
@@ -1788,6 +1877,21 @@ Window_ItemList.prototype.makeItemList = function() {
     if (this.includes(null)) this._data.push(null); 
 };
 
+// alias 
+const winItemList_drawItem = Window_ItemList.prototype.drawItem;
+Window_ItemList.prototype.drawItem = function(index) {
+	
+    const item = this.itemAt(index);
+    if (item) {
+        const numberWidth = this.numberWidth();
+        const rect = this.itemLineRect(index);
+        this.changePaintOpacity(this.isEnabled(item));
+        this.drawItemName(item, rect.x, rect.y, rect.width - numberWidth);
+        this.drawItemNumber(item, rect.x, rect.y, rect.width);
+        this.changePaintOpacity(1);
+    }
+};
+
 
 // --- WINDOW GOLD ---
 // overwrite
@@ -1796,7 +1900,7 @@ Window_Gold.prototype.refresh = function() {
 	const unit = this.currencyUnit();
 	this.contents.clear();
 	this.resetTextColor();
-	this.drawText("You:", rect.x, rect.y, rect.width);
+	this.drawText("Party:", rect.x, rect.y, rect.width);
 	this.drawNewGoldValue(this.value(), unit, rect.x, rect.y, rect.width);
 };
 
@@ -1813,14 +1917,14 @@ Window_Gold.prototype.numWindowRefresh = function() {
 	this.contents.clear();
 	let value = this.value();
 	switch (sym) {
-        case "buy": {
+        case "buy":
 			this.processColorChange(10);
 			this.drawNewGoldValue(value - total, unit, x, y, w);
-		} break;
-        case "sell": {
+			break;
+        case "sell":
 			this.processColorChange(24);
 			this.drawNewGoldValue(value + total, unit, x, y, w);
-		} break;
+			break;
     }
 	this.resetFontSettings();
 };
@@ -2243,17 +2347,18 @@ LvMZ_Shop.prototype.goods = function() {
 		let type = this.itemType(item);
 		let sold = !!item.buyback;
 		if (type !== -1) {
-			list.push([type,item.id,1,price,num,sold]);
+			list.push([type, item.id, 1, price, num, sold]);
 		}
 	}
 	return list;
 };
 
 LvMZ_Shop.prototype.itemType = function(item) {
-	if (!item) return -1;
-	if (DataManager.isItem(item)) return 0;
-	if (DataManager.isWeapon(item)) return 1;
-	if (DataManager.isArmor(item)) return 2;
+	if (item) {
+		if (DataManager.isItem(item)) return 0;
+		if (DataManager.isWeapon(item)) return 1;
+		if (DataManager.isArmor(item)) return 2;
+	}
 	return -1;
 };
 
@@ -2262,8 +2367,8 @@ LvMZ_Shop.prototype.checkPrice = function(item) {
 	if (!item) return false;
 	if (Imported["LvMZ_Currencies"]) {
 		const note = item.note || "";
-		const tagID = /<ALTCURRENCY:\s(VAR||ITEM||WEAPON||ARMOR)\s(\d+)\s(BUY||SELL)\s(\d+)>/gi;
-		const tagNAME = /<ALTCURRENCY:\s(ITEM||WEAPON||ARMOR)\s([^>]*)\s(BUY||SELL)\s(\d+)>/gi;
+		const tagID = /<ALTCURRENCY:\s(VAR|ITEM|WEAPON|ARMOR)\s(\d+)\s(BUY|SELL)\s(\d+)>/i;
+		const tagNAME = /<ALTCURRENCY:\s(ITEM|WEAPON|ARMOR)\s(.*)\s(BUY|SELL)\s(\d+)>/i;
 		if (note.match(tagID) || note.match(tagNAME) || item.clone) {
 			return true; // regardless of price
 		}
@@ -2304,7 +2409,7 @@ LvMZ_Shop.prototype.sOffset = function() {
 };
 
 LvMZ_Shop.prototype.sAdjust = function() {
-	return this._supplyAdjust || 0);
+	return this._supplyAdjust || 0;
 };
 
 
@@ -2322,16 +2427,16 @@ Game_Contraband.prototype.initialize = function() {
 
 Game_Contraband.prototype.count = function(type) {
 	switch (type.toLowerCase()) {
-		case "item": return Object.keys(this._items).length;
+		case "item":   return Object.keys(this._items).length;
 		case "weapon": return Object.keys(this._weapons).length;
-		case "armor": return Object.keys(this._armors).length;
-		case "gold": return this._gold;
+		case "armor":  return Object.keys(this._armors).length;
+		case "gold":   return this._gold;
 	}
 	return 0;
 };
 
 Game_Contraband.prototype.addGold = function(amount) {
-	this._gold = (this._gold + amount).clamp(0, $gameParty.maxGold());
+	this._gold = Math.max((this._gold + amount), 0);
 };
 
 Game_Contraband.prototype.loseGold = function(amount) {
@@ -2348,89 +2453,4 @@ Game_Contraband.prototype.mergeWeapons = function(weapons) {
 
 Game_Contraband.prototype.mergeArmors = function(armors) {
 	mergeData(this._armors, armors);
-};
-
-
-// ============================================================================
-// -- Global Functions --
-
-function economicBuyPrice(price, index) {
-	price *= $gameSystem.markUp();		// Buy price
-	const min = Math.floor(price / 2);	// Half buy price
-	let adj = 0;						// Total price adjustment
-	// Supply & Demand
-	const demand = $gameSystem.demand(index);
-	adj += supplyCheck(index);
-	adj += demand[0]; 					// Rate(%)
-	adj += demand[1]; 					// Fixed Adjustment
-	// Faction, Race, Gender, Fame, Relation, Titles, and Age
-	//  * Positive numbers become discounts here!
-	if (Imported["LvMZ_Factions"]) {
-		const ev = MapManager.event();
-		const pc = $gameParty.leader();
-		adj += ev.lvGet('priceAdjust',[pc,'faction']) * -1;
-		adj += ev.lvGet('priceAdjust',[pc,'race']) * -1;
-		adj += ev.lvGet('priceAdjust',[pc,'gender']) * -1;
-		adj += ev.lvGet('priceAdjust',[pc,'reputation']) * -1;
-		adj += ev.lvGet('priceAdjust',[pc,'relation']) * -1;
-		adj += ev.lvGet('priceAdjust',[pc,'romance']) * -1;
-		adj += ev.lvGet('priceAdjust',[pc,'title']) * -1;
-		adj += ev.lvGet('priceAdjust',[pc,'age']) * -1;
-	}
-	// Taxes
-	adj += $gameSystem.taxRate();
-	// Apply Adjustments
-	price += (price * adj).percent();
-	return Math.max(min, price);
-};
-
-function economicSellPrice(price, index) {
-	price *= $gameSystem.markDown();    // Sell Price
-	const max = (price * 2); 			// Double Sell Price
-	let adj = 0;						// Total Price Adjustment
-	// Supply & Demand
-	const demand = $gameSystem.demand(index);
-	adj += supplyCheck(index);
-	adj += demand[0]; 					// Rate(%)
-	adj += demand[1]; 					// Fixed Adjustment
-	// Faction, Race, Gender, Fame, Relation, and Titles
-	if (Imported["LvMZ_Factions"]) {
-		const ev = MapManager.event();
-		const pc = $gameParty.leader();
-		adj += ev.lvGet('priceAdjust',[pc,'faction']);
-		adj += ev.lvGet('priceAdjust',[pc,'race']);
-		adj += ev.lvGet('priceAdjust',[pc,'gender']);
-		adj += ev.lvGet('priceAdjust',[pc,'reputation'])
-		adj += ev.lvGet('priceAdjust',[pc,'relation']);
-		adj += ev.lvGet('priceAdjust',[pc,'romance']);
-		adj += ev.lvGet('priceAdjust',[pc,'title']);
-		adj += ev.lvGet('priceAdjust',[pc,'age']);
-	}
-	// Taxes
-	adj -= $gameSystem.taxRate();
-	// Apply Adjustments
-	price += (price * adj).percent();
-	return price.clamp(1, max);
-};
-
-function supplyCheck(index) {
-	const shop = MapManager.event().shopData();
-	const stock = shop._stock[index];
-	const min = shop.sMin();
-	const max = shop.sMax();
-	const os  = shop.sOffset();
-	const rate = shop.sAdjust();
-	let adjust = 0;
-	if (stock < min) {
-		adjust = Math.floor((min - stock) / os) * rate;
-	} else if (stock > max) {
-		adjust = (Math.floor((stock - max) / os) * rate) * -1;
-	}
-	return (adjust / 100).percent();
-};
-
-function itemProxy(item) {
-	if (!item) return null;
-	if (!item.stolenType) return item;
-	return itemGroup(item.stolenType, item.id);
 };
