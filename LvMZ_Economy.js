@@ -5,13 +5,13 @@
 
 // -- Global Variables --------------------------------------------------------
 var LvMZ = LvMZ || {};
-if (!LvMZ.Core || LvMZ.Core.version < 1.7) {
-	throw new Error("LvMZ_Core version 1.7 or later required!");
+if (!LvMZ.Core || LvMZ.Core.version < 1.8) {
+	throw new Error("LvMZ_Core version 1.8 or later required!");
 }
 LvMZ.Economy = {
 	name: "Economy",
 	desc: "Adds shop gold and other enhancements!",
-	version: 2.1
+	version: 2.2
 };
 var Imported = Imported || {};
 Imported["LvMZ_Economy"] = true;
@@ -46,7 +46,7 @@ function economicBuyPrice(price, index) {
 	// Apply Adjustments
 	price += (price * adj).percent();
 	return Math.max(min, price);
-};
+}
 
 function economicSellPrice(price, index) {
 	price *= $gameSystem.markDown();    // Sell Price
@@ -75,7 +75,7 @@ function economicSellPrice(price, index) {
 	// Apply Adjustments
 	price += (price * adj).percent();
 	return price.clamp(1, max);
-};
+}
 
 function supplyCheck(index) {
 	const shop = MapManager.event().shopData();
@@ -91,17 +91,17 @@ function supplyCheck(index) {
 		adjust = (Math.floor((stock - max) / os) * rate) * -1;
 	}
 	return (adjust / 100).percent();
-};
+}
 
 function itemProxy(item) {
 	if (!item) return null;
 	if (!item.stolenType) return item;
 	return itemGroup(item.stolenType, item.id);
-};
+}
 
 /*:
  * @target MZ
- * @plugindesc [v2.1] Gives life to the world and its merchants by varying up
+ * @plugindesc [v2.2] Gives life to the world and its merchants by varying up
  * their prices based on several factors (including relations and supply).
  * @author LordValinar
  * @url https://github.com/DarkArchon85/RMMZ-Plugins
@@ -746,9 +746,11 @@ function itemProxy(item) {
  * Changelog
  * ----------------------------------------------------------------------------
  *
- * v2.1 - Final : reverted S&D rate value and code cleanup
+ * v2.2 - Final: 
+ * 
+ * v2.1 - Reverted S&D rate value and code cleanup
  *
- * v2.0 - added "Party:" text for party gold in shop menu
+ * v2.0 - Added "Party:" text for party gold in shop menu
  *      - Fixed another S&D object that wasn't to LvMZ_Core standards
  *
  * v1.91 - Hotfix (S&D object wasn't to LvMZ_Core 1.5 standards)
@@ -1303,9 +1305,9 @@ Game_Party.prototype.stealItem = function(item, amount, includeEquip) {
 
 Game_Party.prototype.stolenGoods = function(item) {
 	if (item) {
-		if (DataManager.isItem(item)) return this._stolenItems;
+		if (DataManager.isItem(item))   return this._stolenItems;
 		if (DataManager.isWeapon(item)) return this._stolenWeapons;
-		if (DataManager.isArmor(item)) return this._stolenArmors;
+		if (DataManager.isArmor(item))  return this._stolenArmors;
 	}
 	return null;
 };
@@ -1527,7 +1529,7 @@ Game_Event.prototype.createNewShop = function() {
 };
 	
 Game_Event.prototype.switchShops = function(id) {
-	if (!id || !this.isShop() || this.shopId() === id) return;
+	if ([0,id].includes(this.shopId())) return;
 	// First, store current data 
 	const shop = this.shopData();
 	this.saveShopData(shop);
@@ -1875,21 +1877,6 @@ Window_ItemList.prototype.makeItemList = function() {
 		.concat($gameParty.allStolen())
 		.filter(item => this.includes(item));
     if (this.includes(null)) this._data.push(null); 
-};
-
-// alias 
-const winItemList_drawItem = Window_ItemList.prototype.drawItem;
-Window_ItemList.prototype.drawItem = function(index) {
-	
-    const item = this.itemAt(index);
-    if (item) {
-        const numberWidth = this.numberWidth();
-        const rect = this.itemLineRect(index);
-        this.changePaintOpacity(this.isEnabled(item));
-        this.drawItemName(item, rect.x, rect.y, rect.width - numberWidth);
-        this.drawItemNumber(item, rect.x, rect.y, rect.width);
-        this.changePaintOpacity(1);
-    }
 };
 
 
